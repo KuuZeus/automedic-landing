@@ -1,4 +1,3 @@
-
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { z } from "zod";
@@ -41,7 +40,8 @@ const SignIn = () => {
 
       // Simulate successful login
       toast.success("Signed in successfully!");
-      setTimeout(() => navigate("/"), 1500);
+      // Redirect to dashboard instead of home page
+      setTimeout(() => navigate("/dashboard"), 1500);
     } catch (error) {
       console.error("Error signing in:", error);
       toast.error("Invalid email or password. Please try again.");
