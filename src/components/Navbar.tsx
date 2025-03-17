@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { Button } from "../components/ui/button";
 import { Menu, X } from "lucide-react";
+import { Link } from "react-router-dom";
 
 const Navbar: React.FC = () => {
   const [scrolled, setScrolled] = useState(false);
@@ -28,11 +29,11 @@ const Navbar: React.FC = () => {
       }`}
     >
       <div className="container max-w-7xl mx-auto px-4 md:px-6 flex items-center justify-between">
-        <a href="/" className="flex items-center space-x-2">
+        <Link to="/" className="flex items-center space-x-2">
           <span className="text-2xl font-semibold bg-gradient-to-r from-health-700 to-health-500 bg-clip-text text-transparent">
             SynchoraHealth
           </span>
-        </a>
+        </Link>
 
         {/* Desktop Navigation */}
         <nav className="hidden md:flex items-center space-x-8">
@@ -54,14 +55,18 @@ const Navbar: React.FC = () => {
           >
             Pricing
           </a>
-          <Button variant="ghost" className="font-medium">
-            Sign In
-          </Button>
-          <Button
-            className="bg-health-600 hover:bg-health-700 text-white rounded-full px-6"
-          >
-            Get Started
-          </Button>
+          <Link to="/sign-in">
+            <Button variant="ghost" className="font-medium">
+              Sign In
+            </Button>
+          </Link>
+          <Link to="/sign-up">
+            <Button
+              className="bg-health-600 hover:bg-health-700 text-white rounded-full px-6"
+            >
+              Get Started
+            </Button>
+          </Link>
         </nav>
 
         {/* Mobile Menu Button */}
@@ -97,19 +102,21 @@ const Navbar: React.FC = () => {
           >
             Pricing
           </a>
-          <Button
-            variant="ghost"
-            className="justify-start"
-            onClick={() => setMobileMenuOpen(false)}
-          >
-            Sign In
-          </Button>
-          <Button
-            className="bg-health-600 hover:bg-health-700 text-white w-full"
-            onClick={() => setMobileMenuOpen(false)}
-          >
-            Get Started
-          </Button>
+          <Link to="/sign-in" onClick={() => setMobileMenuOpen(false)}>
+            <Button
+              variant="ghost"
+              className="justify-start"
+            >
+              Sign In
+            </Button>
+          </Link>
+          <Link to="/sign-up" onClick={() => setMobileMenuOpen(false)}>
+            <Button
+              className="bg-health-600 hover:bg-health-700 text-white w-full"
+            >
+              Get Started
+            </Button>
+          </Link>
         </nav>
       )}
     </header>
