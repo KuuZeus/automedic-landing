@@ -1,7 +1,7 @@
 
 import React, { useState } from "react";
 import { format } from "date-fns";
-import { CalendarIcon, CheckCircle2, Clock } from "lucide-react";
+import { CalendarIcon, CheckCircle2, Clock, User, Settings } from "lucide-react";
 import { 
   Table, 
   TableBody, 
@@ -34,7 +34,24 @@ import {
   DialogTitle,
   DialogFooter,
   DialogClose,
+  DialogTrigger
 } from "@/components/ui/dialog";
+import { useNavigate } from "react-router-dom";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 // Mock data - would be fetched from API in a real app
 const mockPatients = [
@@ -43,45 +60,98 @@ const mockPatients = [
     name: "Abena Owusu", 
     time: "9:00 AM", 
     purpose: "Follow-up",
-    status: "pending" 
+    status: "pending",
+    gender: "female",
+    photoUrl: ""
   },
   { 
     id: "PAT-1042", 
     name: "Kofi Mensah", 
     time: "10:30 AM", 
     purpose: "Medication Review",
-    status: "attended" 
+    status: "attended",
+    gender: "male",
+    photoUrl: ""
   },
   { 
     id: "PAT-1107", 
     name: "Ama Darko", 
     time: "11:45 AM", 
     purpose: "Lab Results",
-    status: "pending" 
+    status: "pending",
+    gender: "female",
+    photoUrl: ""
   },
   { 
     id: "PAT-1205", 
     name: "John Agyekum", 
     time: "2:00 PM", 
     purpose: "New Consultation",
-    status: "pending" 
+    status: "pending",
+    gender: "male",
+    photoUrl: ""
   },
   { 
     id: "PAT-1253", 
     name: "Fatima Ibrahim", 
     time: "3:15 PM", 
     purpose: "Follow-up",
-    status: "pending" 
+    status: "pending",
+    gender: "female",
+    photoUrl: ""
   },
 ];
 
+// Mock user data
+const mockUserData = {
+  id: "GH-DOC-10235",
+  name: "Dr. Kwame Mensah",
+  hospital: "Korle Bu Teaching Hospital",
+  clinic: "Diabetes Clinic",
+};
+
+const appointmentFormSchema = z.object({
+  patientName: z.string().min(3, { message: "Patient name is required" }),
+  patientId: z.string().optional(),
+  phoneNumber: z.string().min(10, { message: "Valid phone number is required" }),
+  gender: z.enum(["male", "female"], {
+    required_error: "Please select a gender",
+  }),
+  appointmentDate: z.date({
+    required_error: "Appointment date is required",
+  }),
+  appointmentTime: z.string().min(1, { message: "Appointment time is required" }),
+  clinic: z.string().min(1, { message: "Clinic is required" }),
+  purpose: z.string().min(3, { message: "Purpose is required" }),
+  notes: z.string().optional(),
+});
+
 const PatientSchedule = () => {
+  const navigate = useNavigate();
   const [patients, setPatients] = useState(mockPatients);
   const [selectedPatient, setSelectedPatient] = useState<string | null>(null);
   const [nextAppointmentDate, setNextAppointmentDate] = useState<Date | undefined>(
     new Date(Date.now() + 14 * 24 * 60 * 60 * 1000) // Default to 2 weeks from now
   );
   const [isNextAppointmentDialogOpen, setIsNextAppointmentDialogOpen] = useState(false);
+  const [isNewAppointmentDialogOpen, setIsNewAppointmentDialogOpen] = useState(false);
+  
+  const user = mockUserData; // In a real app, this would come from auth context
+
+  const appointmentForm = useForm<z.infer<typeof appointmentFormSchema>>({
+    resolver: zodResolver(appointmentFormSchema),
+    defaultValues: {
+      patientName: "",
+      patientId: "",
+      phoneNumber: "",
+      gender: undefined,
+      appointmentDate: new Date(),
+      appointmentTime: "",
+      clinic: user.clinic,
+      purpose: "",
+      notes: "",
+    },
+  });
 
   const updatePatientStatus = (patientId: string, newStatus: string) => {
     setPatients(
@@ -111,21 +181,289 @@ const PatientSchedule = () => {
     setIsNextAppointmentDialogOpen(false);
   };
 
+  const handleCreateAppointment = (values: z.infer<typeof appointmentFormSchema>) => {
+    console.log("Creating appointment:", values);
+    
+    toast.success("New appointment created successfully");
+    appointmentForm.reset();
+    setIsNewAppointmentDialogOpen(false);
+  };
+
+  const getInitials = (name: string) => {
+    return name.split(' ').map(n => n[0]).join('');
+  };
+
   return (
-    <div className="container max-w-7xl mx-auto py-24 px-4">
+    <div className="container max-w-7xl mx-auto py-10 px-4">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+        <div>
+          <h1 className="text-2xl font-bold">Today's Patient Schedule</h1>
+          <p className="text-muted-foreground">
+            {format(new Date(), "EEEE, MMMM do, yyyy")}
+          </p>
+        </div>
+        
+        <div className="flex gap-2">
+          <Dialog open={isNewAppointmentDialogOpen} onOpenChange={setIsNewAppointmentDialogOpen}>
+            <DialogTrigger asChild>
+              <Button>New Appointment</Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-4xl">
+              <DialogHeader>
+                <DialogTitle>Schedule New Appointment</DialogTitle>
+              </DialogHeader>
+              <Form {...appointmentForm}>
+                <form onSubmit={appointmentForm.handleSubmit(handleCreateAppointment)} className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <FormField
+                      control={appointmentForm.control}
+                      name="patientName"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Patient Name</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Enter patient name" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={appointmentForm.control}
+                      name="patientId"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Patient ID (if existing)</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Patient ID (optional)" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={appointmentForm.control}
+                      name="phoneNumber"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Phone Number</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Phone number" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={appointmentForm.control}
+                      name="gender"
+                      render={({ field }) => (
+                        <FormItem className="space-y-3">
+                          <FormLabel>Gender</FormLabel>
+                          <FormControl>
+                            <RadioGroup
+                              onValueChange={field.onChange}
+                              defaultValue={field.value}
+                              className="flex gap-6"
+                            >
+                              <FormItem className="flex items-center space-x-3 space-y-0">
+                                <FormControl>
+                                  <RadioGroupItem value="male" />
+                                </FormControl>
+                                <FormLabel className="font-normal">
+                                  Male
+                                </FormLabel>
+                              </FormItem>
+                              <FormItem className="flex items-center space-x-3 space-y-0">
+                                <FormControl>
+                                  <RadioGroupItem value="female" />
+                                </FormControl>
+                                <FormLabel className="font-normal">
+                                  Female
+                                </FormLabel>
+                              </FormItem>
+                            </RadioGroup>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={appointmentForm.control}
+                      name="clinic"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Clinic</FormLabel>
+                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select clinic" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="Diabetes Clinic">Diabetes Clinic</SelectItem>
+                              <SelectItem value="Cardiology Clinic">Cardiology Clinic</SelectItem>
+                              <SelectItem value="General OPD">General OPD</SelectItem>
+                              <SelectItem value="Pediatrics">Pediatrics</SelectItem>
+                              <SelectItem value="Obstetrics & Gynecology">Obstetrics & Gynecology</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={appointmentForm.control}
+                      name="appointmentDate"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-col">
+                          <FormLabel>Appointment Date</FormLabel>
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <FormControl>
+                                <Button
+                                  variant={"outline"}
+                                  className={cn(
+                                    "w-full pl-3 text-left font-normal",
+                                    !field.value && "text-muted-foreground"
+                                  )}
+                                >
+                                  {field.value ? (
+                                    format(field.value, "PPP")
+                                  ) : (
+                                    <span>Pick a date</span>
+                                  )}
+                                  <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                </Button>
+                              </FormControl>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0" align="start">
+                              <Calendar
+                                mode="single"
+                                selected={field.value}
+                                onSelect={field.onChange}
+                                disabled={(date) =>
+                                  date < new Date(new Date().setHours(0, 0, 0, 0))
+                                }
+                                initialFocus
+                                className={cn("p-3 pointer-events-auto")}
+                              />
+                            </PopoverContent>
+                          </Popover>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={appointmentForm.control}
+                      name="appointmentTime"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Appointment Time</FormLabel>
+                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select time" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="9:00 AM">9:00 AM</SelectItem>
+                              <SelectItem value="9:30 AM">9:30 AM</SelectItem>
+                              <SelectItem value="10:00 AM">10:00 AM</SelectItem>
+                              <SelectItem value="10:30 AM">10:30 AM</SelectItem>
+                              <SelectItem value="11:00 AM">11:00 AM</SelectItem>
+                              <SelectItem value="11:30 AM">11:30 AM</SelectItem>
+                              <SelectItem value="12:00 PM">12:00 PM</SelectItem>
+                              <SelectItem value="2:00 PM">2:00 PM</SelectItem>
+                              <SelectItem value="2:30 PM">2:30 PM</SelectItem>
+                              <SelectItem value="3:00 PM">3:00 PM</SelectItem>
+                              <SelectItem value="3:30 PM">3:30 PM</SelectItem>
+                              <SelectItem value="4:00 PM">4:00 PM</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  <FormField
+                    control={appointmentForm.control}
+                    name="purpose"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Purpose of Appointment</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select purpose" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="New Consultation">New Consultation</SelectItem>
+                            <SelectItem value="Follow-up">Follow-up</SelectItem>
+                            <SelectItem value="Medication Review">Medication Review</SelectItem>
+                            <SelectItem value="Lab Results">Lab Results</SelectItem>
+                            <SelectItem value="Procedure">Procedure</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={appointmentForm.control}
+                    name="notes"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Additional Notes</FormLabel>
+                        <FormControl>
+                          <Textarea
+                            placeholder="Any additional information or special requirements"
+                            className="min-h-[120px]"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <Button type="submit" className="w-full md:w-auto">
+                    Schedule Appointment
+                  </Button>
+                </form>
+              </Form>
+            </DialogContent>
+          </Dialog>
+          
+          <Button variant="outline" onClick={() => navigate("/user-profile")}>
+            <User className="h-4 w-4 mr-2" />
+            My Profile
+          </Button>
+        </div>
+      </div>
+
       <Card className="w-full">
         <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="text-xl">Today's Patient Schedule</CardTitle>
+          <CardTitle className="text-xl">Patient Appointments</CardTitle>
           <p className="text-sm text-muted-foreground">
-            {format(new Date(), "EEEE, MMMM do, yyyy")}
+            {patients.filter(p => p.status === "pending").length} pending
           </p>
         </CardHeader>
         <CardContent>
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead>Patient</TableHead>
                 <TableHead>ID</TableHead>
-                <TableHead>Name</TableHead>
                 <TableHead>Time</TableHead>
                 <TableHead>Purpose</TableHead>
                 <TableHead>Status</TableHead>
@@ -136,8 +474,24 @@ const PatientSchedule = () => {
               {patients.length > 0 ? (
                 patients.map((patient) => (
                   <TableRow key={patient.id}>
+                    <TableCell>
+                      <div className="flex items-center gap-3">
+                        <Avatar>
+                          <AvatarImage src={patient.photoUrl} alt={patient.name} />
+                          <AvatarFallback className={cn(
+                            patient.gender === "male" ? "bg-blue-100" : "bg-pink-100",
+                            patient.gender === "male" ? "text-blue-600" : "text-pink-600"
+                          )}>
+                            {getInitials(patient.name)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <p className="font-medium">{patient.name}</p>
+                          <p className="text-xs text-muted-foreground">{patient.gender}</p>
+                        </div>
+                      </div>
+                    </TableCell>
                     <TableCell>{patient.id}</TableCell>
-                    <TableCell className="font-medium">{patient.name}</TableCell>
                     <TableCell>{patient.time}</TableCell>
                     <TableCell>{patient.purpose}</TableCell>
                     <TableCell>
