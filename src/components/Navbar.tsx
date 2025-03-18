@@ -55,16 +55,11 @@ const Navbar: React.FC = () => {
           >
             Pricing
           </a>
-          <Link to="/sign-in">
-            <Button variant="ghost" className="font-medium">
-              Sign In
-            </Button>
-          </Link>
-          <Link to="/sign-up">
+          <Link to="/platform">
             <Button
               className="bg-health-600 hover:bg-health-700 text-white rounded-full px-6"
             >
-              Get Started
+              Platform
             </Button>
           </Link>
         </nav>
@@ -102,19 +97,11 @@ const Navbar: React.FC = () => {
           >
             Pricing
           </a>
-          <Link to="/sign-in" onClick={() => setMobileMenuOpen(false)}>
-            <Button
-              variant="ghost"
-              className="justify-start"
-            >
-              Sign In
-            </Button>
-          </Link>
-          <Link to="/sign-up" onClick={() => setMobileMenuOpen(false)}>
+          <Link to="/platform" onClick={() => setMobileMenuOpen(false)}>
             <Button
               className="bg-health-600 hover:bg-health-700 text-white w-full"
             >
-              Get Started
+              Platform
             </Button>
           </Link>
         </nav>
