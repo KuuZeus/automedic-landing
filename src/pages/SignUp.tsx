@@ -1,6 +1,6 @@
 
-import React from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useEffect } from "react";
+import { useNavigate, Link } from "react-router-dom";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -15,7 +15,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { toast } from "sonner";
+import { useAuth } from "@/contexts/AuthContext";
 
 const formSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters" }),
@@ -34,6 +34,15 @@ const formSchema = z.object({
 
 const SignUp = () => {
   const navigate = useNavigate();
+  const { signUp, user, loading } = useAuth();
+
+  // Redirect if user is already logged in
+  useEffect(() => {
+    if (user && !loading) {
+      navigate("/patient-schedule");
+    }
+  }, [user, loading, navigate]);
+
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -46,18 +55,16 @@ const SignUp = () => {
   });
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
-    try {
-      // Here you would typically connect to your database service
-      console.log("Form submitted:", values);
-      
-      // Simulate account creation success
-      toast.success("Account created successfully!");
-      setTimeout(() => navigate("/sign-in"), 1500);
-    } catch (error) {
-      console.error("Error creating account:", error);
-      toast.error("Error creating account. Please try again.");
-    }
+    await signUp(values.email, values.password, values.name);
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-health-600"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
@@ -68,12 +75,12 @@ const SignUp = () => {
           </h2>
           <p className="mt-2 text-sm text-gray-600">
             Already have an account?{" "}
-            <a
-              href="/sign-in"
+            <Link
+              to="/sign-in"
               className="font-medium text-health-600 hover:text-health-500 transition-colors"
             >
               Sign in
-            </a>
+            </Link>
           </p>
         </div>
 
@@ -169,11 +176,21 @@ const SignUp = () => {
             <Button
               type="submit"
               className="w-full py-6 bg-health-600 hover:bg-health-700"
+              disabled={loading}
             >
-              Create Account
+              {loading ? "Creating Account..." : "Create Account"}
             </Button>
           </form>
         </Form>
+        
+        <div className="mt-4 text-center">
+          <Link
+            to="/platform"
+            className="text-sm text-health-600 hover:text-health-500"
+          >
+            Back to Platform
+          </Link>
+        </div>
       </div>
     </div>
   );
