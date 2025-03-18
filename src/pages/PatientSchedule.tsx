@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { format, parseISO, isToday } from "date-fns";
 import { CalendarIcon, CheckCircle2, Clock, User, Settings, Filter } from "lucide-react";
@@ -54,7 +53,6 @@ import { z } from "zod";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { usePatientStore, getPatientById, PatientAppointment } from "@/lib/patientDataService";
 
-// Mock user data
 const mockUserData = {
   id: "GH-DOC-10235",
   name: "Dr. Kwame Mensah",
@@ -89,18 +87,15 @@ const PatientSchedule = () => {
   const [isNewAppointmentDialogOpen, setIsNewAppointmentDialogOpen] = useState(false);
   const [isDateFilterOpen, setIsDateFilterOpen] = useState(false);
   
-  // Get appointments for the selected date
-  const { appointments, updateAppointmentStatus, addAppointment } = usePatientStore();
+  const { appointments, updateAppointmentStatus, addAppointment, getSortedAppointmentsByDate } = usePatientStore();
   const [currentAppointments, setCurrentAppointments] = useState<PatientAppointment[]>([]);
   
   const user = mockUserData; // In a real app, this would come from auth context
 
   useEffect(() => {
-    // Filter appointments for the selected date
-    const dateStr = format(selectedDate, 'yyyy-MM-dd');
-    const filtered = appointments.filter(app => app.date === dateStr);
-    setCurrentAppointments(filtered);
-  }, [selectedDate, appointments]);
+    const sortedAppointments = getSortedAppointmentsByDate(selectedDate);
+    setCurrentAppointments(sortedAppointments);
+  }, [selectedDate, appointments, getSortedAppointmentsByDate]);
 
   const appointmentForm = useForm<z.infer<typeof appointmentFormSchema>>({
     resolver: zodResolver(appointmentFormSchema),
@@ -134,7 +129,6 @@ const PatientSchedule = () => {
     const patient = getPatientById(selectedPatient);
     if (!patient) return;
     
-    // Create a new appointment
     addAppointment({
       patientId: selectedPatient,
       date: format(nextAppointmentDate, 'yyyy-MM-dd'),
@@ -154,15 +148,12 @@ const PatientSchedule = () => {
   };
 
   const handleCreateAppointment = (values: z.infer<typeof appointmentFormSchema>) => {
-    // First check if we need to add a new patient or use existing
     let patientId = values.patientId;
     
     if (!patientId || patientId.trim() === "") {
-      // This would normally create a new patient in the database
       patientId = `PAT-${Math.floor(Math.random() * 10000)}`;
     }
     
-    // Create the appointment
     addAppointment({
       patientId: patientId,
       date: format(values.appointmentDate, 'yyyy-MM-dd'),
@@ -576,7 +567,6 @@ const PatientSchedule = () => {
         </CardContent>
       </Card>
 
-      {/* Next Appointment Dialog */}
       <Dialog open={isNextAppointmentDialogOpen} onOpenChange={setIsNextAppointmentDialogOpen}>
         <DialogContent>
           <DialogHeader>

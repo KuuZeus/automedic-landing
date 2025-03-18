@@ -28,6 +28,7 @@ interface PatientStore {
   getPatientsByDate: (date: Date) => PatientAppointment[];
   updateAppointmentStatus: (appointmentId: string, status: 'pending' | 'attended') => void;
   addAppointment: (appointment: Omit<PatientAppointment, 'id'>) => void;
+  getSortedAppointmentsByDate: (date: Date) => PatientAppointment[];
 }
 
 // Mock initial patients data
@@ -176,9 +177,39 @@ export const usePatientStore = create<PatientStore>((set, get) => ({
       appointments: [...state.appointments, newAppointment]
     }));
   },
+
+  // New function to get appointments sorted by status and time
+  getSortedAppointmentsByDate: (date: Date) => {
+    const dateStr = format(date, 'yyyy-MM-dd');
+    const appointmentsForDate = get().appointments.filter(appointment => appointment.date === dateStr);
+    
+    // Sort by status (pending first) and then by time
+    return appointmentsForDate.sort((a, b) => {
+      // First sort by status
+      if (a.status === 'pending' && b.status === 'attended') return -1;
+      if (a.status === 'attended' && b.status === 'pending') return 1;
+      
+      // If status is the same, sort by time
+      const timeA = convertTimeToMinutes(a.time);
+      const timeB = convertTimeToMinutes(b.time);
+      return timeA - timeB;
+    });
+  }
 }));
 
 // Helper function to get patient details by ID
 export const getPatientById = (patientId: string): Patient | undefined => {
   return usePatientStore.getState().patients.find(patient => patient.id === patientId);
+};
+
+// Helper function to convert time string (e.g., "9:00 AM") to minutes for sorting
+const convertTimeToMinutes = (timeStr: string): number => {
+  const [time, period] = timeStr.split(' ');
+  let [hours, minutes] = time.split(':').map(Number);
+  
+  // Convert to 24-hour format for easier comparison
+  if (period === 'PM' && hours < 12) hours += 12;
+  if (period === 'AM' && hours === 12) hours = 0;
+  
+  return hours * 60 + minutes;
 };
