@@ -1,7 +1,7 @@
 
-import React, { useState } from "react";
-import { format } from "date-fns";
-import { CalendarIcon, CheckCircle2, Clock, User, Settings } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { format, parseISO, isToday } from "date-fns";
+import { CalendarIcon, CheckCircle2, Clock, User, Settings, Filter } from "lucide-react";
 import { 
   Table, 
   TableBody, 
@@ -52,55 +52,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-
-// Mock data - would be fetched from API in a real app
-const mockPatients = [
-  { 
-    id: "PAT-1001", 
-    name: "Abena Owusu", 
-    time: "9:00 AM", 
-    purpose: "Follow-up",
-    status: "pending",
-    gender: "female",
-    photoUrl: ""
-  },
-  { 
-    id: "PAT-1042", 
-    name: "Kofi Mensah", 
-    time: "10:30 AM", 
-    purpose: "Medication Review",
-    status: "attended",
-    gender: "male",
-    photoUrl: ""
-  },
-  { 
-    id: "PAT-1107", 
-    name: "Ama Darko", 
-    time: "11:45 AM", 
-    purpose: "Lab Results",
-    status: "pending",
-    gender: "female",
-    photoUrl: ""
-  },
-  { 
-    id: "PAT-1205", 
-    name: "John Agyekum", 
-    time: "2:00 PM", 
-    purpose: "New Consultation",
-    status: "pending",
-    gender: "male",
-    photoUrl: ""
-  },
-  { 
-    id: "PAT-1253", 
-    name: "Fatima Ibrahim", 
-    time: "3:15 PM", 
-    purpose: "Follow-up",
-    status: "pending",
-    gender: "female",
-    photoUrl: ""
-  },
-];
+import { usePatientStore, getPatientById, PatientAppointment } from "@/lib/patientDataService";
 
 // Mock user data
 const mockUserData = {
@@ -128,15 +80,27 @@ const appointmentFormSchema = z.object({
 
 const PatientSchedule = () => {
   const navigate = useNavigate();
-  const [patients, setPatients] = useState(mockPatients);
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [selectedPatient, setSelectedPatient] = useState<string | null>(null);
   const [nextAppointmentDate, setNextAppointmentDate] = useState<Date | undefined>(
     new Date(Date.now() + 14 * 24 * 60 * 60 * 1000) // Default to 2 weeks from now
   );
   const [isNextAppointmentDialogOpen, setIsNextAppointmentDialogOpen] = useState(false);
   const [isNewAppointmentDialogOpen, setIsNewAppointmentDialogOpen] = useState(false);
+  const [isDateFilterOpen, setIsDateFilterOpen] = useState(false);
+  
+  // Get appointments for the selected date
+  const { appointments, updateAppointmentStatus, addAppointment } = usePatientStore();
+  const [currentAppointments, setCurrentAppointments] = useState<PatientAppointment[]>([]);
   
   const user = mockUserData; // In a real app, this would come from auth context
+
+  useEffect(() => {
+    // Filter appointments for the selected date
+    const dateStr = format(selectedDate, 'yyyy-MM-dd');
+    const filtered = appointments.filter(app => app.date === dateStr);
+    setCurrentAppointments(filtered);
+  }, [selectedDate, appointments]);
 
   const appointmentForm = useForm<z.infer<typeof appointmentFormSchema>>({
     resolver: zodResolver(appointmentFormSchema),
@@ -153,14 +117,10 @@ const PatientSchedule = () => {
     },
   });
 
-  const updatePatientStatus = (patientId: string, newStatus: string) => {
-    setPatients(
-      patients.map((patient) =>
-        patient.id === patientId ? { ...patient, status: newStatus } : patient
-      )
-    );
+  const updatePatientStatus = (appointmentId: string, newStatus: 'pending' | 'attended') => {
+    updateAppointmentStatus(appointmentId, newStatus);
     
-    toast.success(`Patient ${patientId} marked as ${newStatus}`);
+    toast.success(`Patient marked as ${newStatus}`);
   };
 
   const openNextAppointmentDialog = (patientId: string) => {
@@ -170,6 +130,18 @@ const PatientSchedule = () => {
 
   const scheduleNextAppointment = () => {
     if (!selectedPatient || !nextAppointmentDate) return;
+    
+    const patient = getPatientById(selectedPatient);
+    if (!patient) return;
+    
+    // Create a new appointment
+    addAppointment({
+      patientId: selectedPatient,
+      date: format(nextAppointmentDate, 'yyyy-MM-dd'),
+      time: patient.time,
+      purpose: "Follow-up",
+      status: "pending",
+    });
     
     toast.success(
       `Next appointment for patient ${selectedPatient} scheduled for ${format(
@@ -182,7 +154,23 @@ const PatientSchedule = () => {
   };
 
   const handleCreateAppointment = (values: z.infer<typeof appointmentFormSchema>) => {
-    console.log("Creating appointment:", values);
+    // First check if we need to add a new patient or use existing
+    let patientId = values.patientId;
+    
+    if (!patientId || patientId.trim() === "") {
+      // This would normally create a new patient in the database
+      patientId = `PAT-${Math.floor(Math.random() * 10000)}`;
+    }
+    
+    // Create the appointment
+    addAppointment({
+      patientId: patientId,
+      date: format(values.appointmentDate, 'yyyy-MM-dd'),
+      time: values.appointmentTime,
+      purpose: values.purpose,
+      status: "pending",
+      notes: values.notes,
+    });
     
     toast.success("New appointment created successfully");
     appointmentForm.reset();
@@ -197,13 +185,40 @@ const PatientSchedule = () => {
     <div className="container max-w-7xl mx-auto py-10 px-4">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
         <div>
-          <h1 className="text-2xl font-bold">Today's Patient Schedule</h1>
+          <h1 className="text-2xl font-bold">
+            {isToday(selectedDate) 
+              ? "Today's Patient Schedule" 
+              : `Patient Schedule: ${format(selectedDate, "EEEE, MMMM do, yyyy")}`}
+          </h1>
           <p className="text-muted-foreground">
-            {format(new Date(), "EEEE, MMMM do, yyyy")}
+            {isToday(selectedDate) && format(selectedDate, "EEEE, MMMM do, yyyy")}
           </p>
         </div>
         
         <div className="flex gap-2">
+          <Popover open={isDateFilterOpen} onOpenChange={setIsDateFilterOpen}>
+            <PopoverTrigger asChild>
+              <Button variant="outline">
+                <Filter className="h-4 w-4 mr-2" />
+                Filter by Date
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="end">
+              <Calendar
+                mode="single"
+                selected={selectedDate}
+                onSelect={(date) => {
+                  if (date) {
+                    setSelectedDate(date);
+                    setIsDateFilterOpen(false);
+                  }
+                }}
+                initialFocus
+                className={cn("p-3 pointer-events-auto")}
+              />
+            </PopoverContent>
+          </Popover>
+                
           <Dialog open={isNewAppointmentDialogOpen} onOpenChange={setIsNewAppointmentDialogOpen}>
             <DialogTrigger asChild>
               <Button>New Appointment</Button>
@@ -455,7 +470,7 @@ const PatientSchedule = () => {
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="text-xl">Patient Appointments</CardTitle>
           <p className="text-sm text-muted-foreground">
-            {patients.filter(p => p.status === "pending").length} pending
+            {currentAppointments.filter(p => p.status === "pending").length} pending
           </p>
         </CardHeader>
         <CardContent>
@@ -471,81 +486,88 @@ const PatientSchedule = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {patients.length > 0 ? (
-                patients.map((patient) => (
-                  <TableRow key={patient.id}>
-                    <TableCell>
-                      <div className="flex items-center gap-3">
-                        <Avatar>
-                          <AvatarImage src={patient.photoUrl} alt={patient.name} />
-                          <AvatarFallback className={cn(
-                            patient.gender === "male" ? "bg-blue-100" : "bg-pink-100",
-                            patient.gender === "male" ? "text-blue-600" : "text-pink-600"
-                          )}>
-                            {getInitials(patient.name)}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <p className="font-medium">{patient.name}</p>
-                          <p className="text-xs text-muted-foreground">{patient.gender}</p>
+              {currentAppointments.length > 0 ? (
+                currentAppointments.map((appointment) => {
+                  const patient = getPatientById(appointment.patientId);
+                  if (!patient) return null;
+                  
+                  return (
+                    <TableRow key={appointment.id}>
+                      <TableCell>
+                        <div className="flex items-center gap-3">
+                          <Avatar>
+                            <AvatarImage src={patient.photoUrl} alt={patient.name} />
+                            <AvatarFallback className={cn(
+                              patient.gender === "male" ? "bg-blue-100" : "bg-pink-100",
+                              patient.gender === "male" ? "text-blue-600" : "text-pink-600"
+                            )}>
+                              {getInitials(patient.name)}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <p className="font-medium">{patient.name}</p>
+                            <p className="text-xs text-muted-foreground">{patient.gender}</p>
+                          </div>
                         </div>
-                      </div>
-                    </TableCell>
-                    <TableCell>{patient.id}</TableCell>
-                    <TableCell>{patient.time}</TableCell>
-                    <TableCell>{patient.purpose}</TableCell>
-                    <TableCell>
-                      <Select
-                        defaultValue={patient.status}
-                        onValueChange={(value) => updatePatientStatus(patient.id, value)}
-                      >
-                        <SelectTrigger className="w-[130px]">
-                          <SelectValue>
-                            {patient.status === "pending" ? (
+                      </TableCell>
+                      <TableCell>{patient.id}</TableCell>
+                      <TableCell>{appointment.time}</TableCell>
+                      <TableCell>{appointment.purpose}</TableCell>
+                      <TableCell>
+                        <Select
+                          value={appointment.status}
+                          onValueChange={(value: 'pending' | 'attended') => 
+                            updatePatientStatus(appointment.id, value)
+                          }
+                        >
+                          <SelectTrigger className="w-[130px]">
+                            <SelectValue>
+                              {appointment.status === "pending" ? (
+                                <span className="flex items-center gap-2">
+                                  <Clock className="h-4 w-4 text-amber-500" />
+                                  Pending
+                                </span>
+                              ) : (
+                                <span className="flex items-center gap-2">
+                                  <CheckCircle2 className="h-4 w-4 text-green-500" />
+                                  Attended
+                                </span>
+                              )}
+                            </SelectValue>
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="pending">
                               <span className="flex items-center gap-2">
                                 <Clock className="h-4 w-4 text-amber-500" />
                                 Pending
                               </span>
-                            ) : (
+                            </SelectItem>
+                            <SelectItem value="attended">
                               <span className="flex items-center gap-2">
                                 <CheckCircle2 className="h-4 w-4 text-green-500" />
                                 Attended
                               </span>
-                            )}
-                          </SelectValue>
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="pending">
-                            <span className="flex items-center gap-2">
-                              <Clock className="h-4 w-4 text-amber-500" />
-                              Pending
-                            </span>
-                          </SelectItem>
-                          <SelectItem value="attended">
-                            <span className="flex items-center gap-2">
-                              <CheckCircle2 className="h-4 w-4 text-green-500" />
-                              Attended
-                            </span>
-                          </SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => openNextAppointmentDialog(patient.id)}
-                      >
-                        <CalendarIcon className="h-4 w-4 mr-2" />
-                        Next Appointment
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))
+                            </SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => openNextAppointmentDialog(patient.id)}
+                        >
+                          <CalendarIcon className="h-4 w-4 mr-2" />
+                          Next Appointment
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })
               ) : (
                 <TableRow>
                   <TableCell colSpan={6} className="text-center py-6">
-                    No appointments scheduled for today
+                    No appointments scheduled for {format(selectedDate, "MMMM do, yyyy")}
                   </TableCell>
                 </TableRow>
               )}
