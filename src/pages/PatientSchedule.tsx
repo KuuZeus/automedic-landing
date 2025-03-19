@@ -29,7 +29,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
-// Define type for the database appointment that matches the actual return from Supabase
+// Define type for the database appointment that matches Supabase table structure
 interface DbAppointment {
   id: string;
   patient_id: string;
@@ -37,7 +37,7 @@ interface DbAppointment {
   date: string;
   time: string;
   purpose: string;
-  status: string;
+  status: string; // Changed from 'pending' | 'attended' to string to match Supabase response
   notes?: string;
   created_at: string;
   updated_at: string;

@@ -11,9 +11,12 @@ export type Database = {
     Tables: {
       appointments: {
         Row: {
+          clinic: string | null
           created_at: string
           date: string
+          hospital: string | null
           id: string
+          next_review_date: string | null
           notes: string | null
           patient_id: string
           patient_name: string
@@ -23,9 +26,12 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          clinic?: string | null
           created_at?: string
           date: string
+          hospital?: string | null
           id?: string
+          next_review_date?: string | null
           notes?: string | null
           patient_id: string
           patient_name: string
@@ -35,9 +41,12 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          clinic?: string | null
           created_at?: string
           date?: string
+          hospital?: string | null
           id?: string
+          next_review_date?: string | null
           notes?: string | null
           patient_id?: string
           patient_name?: string
