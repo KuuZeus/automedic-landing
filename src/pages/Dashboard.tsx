@@ -28,6 +28,7 @@ import {
   Cell,
   Legend,
   TooltipProps,
+  Text,
 } from "recharts";
 
 const Dashboard = () => {
@@ -210,6 +211,37 @@ const Dashboard = () => {
       );
     }
     return null;
+  };
+
+  const CustomXAxisLabel = (props: any) => {
+    const { x, y, width } = props;
+    return (
+      <Text 
+        x={x + width / 2} 
+        y={y + 45} 
+        textAnchor="middle" 
+        fill="#666"
+        fontSize={12}
+      >
+        Purpose of Visit
+      </Text>
+    );
+  };
+
+  const CustomYAxisLabel = (props: any) => {
+    const { x, y, height } = props;
+    return (
+      <Text 
+        x={x - 60}
+        y={y + height / 2}
+        textAnchor="middle"
+        fill="#666"
+        fontSize={12}
+        transform={`rotate(-90, ${x - 60}, ${y + height / 2})`}
+      >
+        Number of Appointments
+      </Text>
+    );
   };
 
   return (
@@ -414,29 +446,23 @@ const Dashboard = () => {
                       <ResponsiveContainer width="100%" height="100%">
                         <BarChart
                           data={appointmentsByPurpose}
-                          margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
+                          margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
                         >
                           <CartesianGrid strokeDasharray="3 3" />
                           <XAxis 
                             dataKey="name" 
                             tick={false}
-                            axisLine={{ stroke: '#E2E8F0' }}  
+                            axisLine={{ stroke: '#E2E8F0' }}
+                            label={<CustomXAxisLabel />}
                           />
                           <YAxis 
-                            allowDecimals={false} 
-                            label={{ value: 'Number of Appointments', angle: -90, position: 'insideLeft' }}
+                            allowDecimals={false}
                             axisLine={{ stroke: '#E2E8F0' }}
+                            label={<CustomYAxisLabel />}
                           />
                           <RechartsTooltip content={<CustomTooltip />} />
-                          <Legend 
-                            layout="horizontal" 
-                            verticalAlign="top" 
-                            align="center"
-                            wrapperStyle={{ paddingBottom: '10px' }}
-                          />
                           <Bar 
                             dataKey="value" 
-                            name="Appointments" 
                             radius={[4, 4, 0, 0]}
                           >
                             {appointmentsByPurpose.map((entry, index) => (
