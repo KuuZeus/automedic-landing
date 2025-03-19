@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import AuthNav from "@/components/AuthNav";
@@ -50,13 +51,13 @@ const Dashboard = () => {
 
   // Define specific colors for common visit purposes
   const PURPOSE_COLORS = {
-    'Follow up': '#9b87f5',
-    'Medication review': '#0EA5E9',
-    'Annual checkup': '#F97316',
+    'Follow up': '#F97316',
+    'Medication review': '#8B5CF6',
+    'Annual checkup': '#0EA5E9',
     'Vaccination': '#D946EF',
-    'Consultation': '#8B5CF6',
-    'Lab review': '#6E59A5',
-    'Physical exam': '#7E69AB',
+    'Initial Consultation': '#9b87f5',
+    'Test Results': '#6E59A5',
+    'Lab Results': '#7E69AB',
     'Chronic disease management': '#D6BCFA'
   };
   
@@ -117,12 +118,12 @@ const Dashboard = () => {
             // Define sample purposes if no data exists
             if (appointmentsData.length === 0 || !appointmentsData.some(app => app.purpose)) {
               // Sample data for demonstration
-              purposeGroups['Follow up'] = 8;
-              purposeGroups['Medication review'] = 12;
-              purposeGroups['Annual checkup'] = 5;
-              purposeGroups['Vaccination'] = 7;
-              purposeGroups['Consultation'] = 15;
-              purposeGroups['Lab review'] = 4;
+              purposeGroups['Initial Consultation'] = 1;
+              purposeGroups['Vaccination'] = 1;
+              purposeGroups['Follow up'] = 3;
+              purposeGroups['Test Results'] = 1;
+              purposeGroups['Medication Review'] = 1;
+              purposeGroups['Lab Results'] = 1;
             } else {
               appointmentsData.forEach(app => {
                 if (app.purpose) {
@@ -202,6 +203,19 @@ const Dashboard = () => {
   }
 
   if (!user) return null;
+
+  // Custom tooltip content for the chart
+  const CustomTooltip = ({ active, payload, label }) => {
+    if (active && payload && payload.length) {
+      return (
+        <div className="bg-white p-2 border border-gray-200 shadow-md rounded-md">
+          <p className="font-semibold">{payload[0].payload.name}</p>
+          <p>{`${payload[0].value} appointments`}</p>
+        </div>
+      );
+    }
+    return null;
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
@@ -405,24 +419,20 @@ const Dashboard = () => {
                       <ResponsiveContainer width="100%" height="100%">
                         <BarChart
                           data={appointmentsByPurpose}
-                          margin={{ top: 20, right: 30, left: 20, bottom: 70 }}
+                          margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
                         >
                           <CartesianGrid strokeDasharray="3 3" />
                           <XAxis 
                             dataKey="name" 
-                            angle={-45} 
-                            textAnchor="end" 
-                            height={70} 
-                            label={{ value: 'Purpose of Visit', position: 'insideBottom', offset: -35 }}
+                            tick={false} // This hides the x-axis labels
+                            axisLine={{ stroke: '#E2E8F0' }}  
                           />
                           <YAxis 
                             allowDecimals={false} 
                             label={{ value: 'Number of Appointments', angle: -90, position: 'insideLeft' }}
+                            axisLine={{ stroke: '#E2E8F0' }}
                           />
-                          <RechartsTooltip 
-                            formatter={(value) => [`${value} appointments`, 'Total']}
-                            labelFormatter={(label) => `Purpose: ${label}`}
-                          />
+                          <RechartsTooltip content={<CustomTooltip />} />
                           <Legend 
                             layout="horizontal" 
                             verticalAlign="top" 
