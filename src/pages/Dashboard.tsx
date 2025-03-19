@@ -30,6 +30,7 @@ import {
   TooltipProps,
   Text,
 } from "recharts";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const Dashboard = () => {
   const { user, loading } = useAuth();
@@ -49,6 +50,7 @@ const Dashboard = () => {
   });
   const [appointmentsByPurpose, setAppointmentsByPurpose] = useState([]);
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
 
   const PURPOSE_COLORS = {
     'Follow up': '#F97316',
@@ -218,10 +220,10 @@ const Dashboard = () => {
     return (
       <Text 
         x={x + width / 2} 
-        y={y + 45} 
+        y={y + (isMobile ? 35 : 45)} 
         textAnchor="middle" 
         fill="#666"
-        fontSize={12}
+        fontSize={isMobile ? 10 : 12}
       >
         Purpose of Visit
       </Text>
@@ -232,12 +234,12 @@ const Dashboard = () => {
     const { x, y, height } = props;
     return (
       <Text 
-        x={x - 60}
+        x={x - (isMobile ? 45 : 60)}
         y={y + height / 2}
         textAnchor="middle"
         fill="#666"
-        fontSize={12}
-        transform={`rotate(-90, ${x - 60}, ${y + height / 2})`}
+        fontSize={isMobile ? 10 : 12}
+        transform={`rotate(-90, ${x - (isMobile ? 45 : 60)}, ${y + height / 2})`}
       >
         Number of Appointments
       </Text>
@@ -247,16 +249,16 @@ const Dashboard = () => {
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <AuthNav />
-      <main className="container mx-auto px-4 py-8 max-w-6xl flex-grow">
-        <div className="mb-6 flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-gray-900">My Dashboard</h1>
+      <main className="container mx-auto px-4 py-6 md:py-8 max-w-6xl flex-grow">
+        <div className="mb-4 md:mb-6 flex items-center justify-between">
+          <h1 className="text-xl md:text-2xl font-bold text-gray-900">My Dashboard</h1>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
           <Card className="md:col-span-1">
-            <CardHeader className="pb-3">
+            <CardHeader className="pb-2 md:pb-3">
               <div className="flex items-center justify-between">
-                <CardTitle>Personal Details</CardTitle>
+                <CardTitle className="text-lg md:text-2xl">Personal Details</CardTitle>
                 <Button 
                   variant="ghost" 
                   size="sm"
@@ -268,8 +270,8 @@ const Dashboard = () => {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="flex flex-col items-center mb-6">
-                <Avatar className="h-20 w-20 mb-4">
+              <div className="flex flex-col items-center mb-4 md:mb-6">
+                <Avatar className="h-16 w-16 md:h-20 md:w-20 mb-3 md:mb-4">
                   <AvatarImage src="" alt={`${firstName} ${lastName}`} />
                   <AvatarFallback className="text-lg bg-health-100 text-health-700">
                     {firstName.charAt(0)}{lastName.charAt(0)}
@@ -383,20 +385,20 @@ const Dashboard = () => {
             </CardContent>
           </Card>
 
-          <div className="md:col-span-2 space-y-6">
+          <div className="md:col-span-2 space-y-4 md:space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>Dashboard Overview</CardTitle>
+                <CardTitle className="text-lg md:text-2xl">Dashboard Overview</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div className="space-y-4 md:space-y-6">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-4">
                     <Card>
-                      <CardHeader className="pb-2">
+                      <CardHeader className="pb-1 md:pb-2 p-3 md:p-6">
                         <CardDescription>Total Appointments</CardDescription>
-                        <CardTitle className="text-3xl">{appointmentStats.total}</CardTitle>
+                        <CardTitle className="text-2xl md:text-3xl">{appointmentStats.total}</CardTitle>
                       </CardHeader>
-                      <CardContent>
+                      <CardContent className="p-3 md:p-6 pt-0">
                         <div className="text-xs text-muted-foreground">
                           Across all time
                         </div>
@@ -404,11 +406,11 @@ const Dashboard = () => {
                     </Card>
                     
                     <Card>
-                      <CardHeader className="pb-2">
+                      <CardHeader className="pb-1 md:pb-2 p-3 md:p-6">
                         <CardDescription>Pending</CardDescription>
-                        <CardTitle className="text-3xl">{appointmentStats.pending}</CardTitle>
+                        <CardTitle className="text-2xl md:text-3xl">{appointmentStats.pending}</CardTitle>
                       </CardHeader>
-                      <CardContent>
+                      <CardContent className="p-3 md:p-6 pt-0">
                         <div className="text-xs text-muted-foreground">
                           Appointments to attend
                         </div>
@@ -416,11 +418,11 @@ const Dashboard = () => {
                     </Card>
                     
                     <Card>
-                      <CardHeader className="pb-2">
+                      <CardHeader className="pb-1 md:pb-2 p-3 md:p-6">
                         <CardDescription>Completed</CardDescription>
-                        <CardTitle className="text-3xl">{appointmentStats.attended}</CardTitle>
+                        <CardTitle className="text-2xl md:text-3xl">{appointmentStats.attended}</CardTitle>
                       </CardHeader>
-                      <CardContent>
+                      <CardContent className="p-3 md:p-6 pt-0">
                         <div className="text-xs text-muted-foreground">
                           Appointments attended
                         </div>
@@ -428,11 +430,11 @@ const Dashboard = () => {
                     </Card>
                     
                     <Card>
-                      <CardHeader className="pb-2">
+                      <CardHeader className="pb-1 md:pb-2 p-3 md:p-6">
                         <CardDescription>Canceled</CardDescription>
-                        <CardTitle className="text-3xl">{appointmentStats.canceled}</CardTitle>
+                        <CardTitle className="text-2xl md:text-3xl">{appointmentStats.canceled}</CardTitle>
                       </CardHeader>
-                      <CardContent>
+                      <CardContent className="p-3 md:p-6 pt-0">
                         <div className="text-xs text-muted-foreground">
                           Appointments canceled
                         </div>
@@ -441,12 +443,18 @@ const Dashboard = () => {
                   </div>
                   
                   <div>
-                    <h3 className="text-md font-medium mb-4">Appointments by Purpose of Visit</h3>
-                    <div className="h-72">
+                    <h3 className="text-sm md:text-md font-medium mb-3 md:mb-4">Appointments by Purpose of Visit</h3>
+                    <div className="h-60 md:h-72 overflow-x-hidden">
                       <ResponsiveContainer width="100%" height="100%">
                         <BarChart
                           data={appointmentsByPurpose}
-                          margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
+                          margin={{ 
+                            top: 20, 
+                            right: isMobile ? 10 : 30, 
+                            left: isMobile ? 0 : 20, 
+                            bottom: isMobile ? 50 : 60 
+                          }}
+                          barSize={isMobile ? 12 : 20}
                         >
                           <CartesianGrid strokeDasharray="3 3" />
                           <XAxis 
@@ -459,6 +467,8 @@ const Dashboard = () => {
                             allowDecimals={false}
                             axisLine={{ stroke: '#E2E8F0' }}
                             label={<CustomYAxisLabel />}
+                            fontSize={isMobile ? 10 : 12}
+                            width={isMobile ? 30 : 40}
                           />
                           <RechartsTooltip content={<CustomTooltip />} />
                           <Bar 
