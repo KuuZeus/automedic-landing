@@ -18,8 +18,12 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 
 const formSchema = z.object({
-  name: z.string().min(2, { message: "Name must be at least 2 characters" }),
+  firstName: z.string().min(2, { message: "First name must be at least 2 characters" }),
+  lastName: z.string().min(2, { message: "Last name must be at least 2 characters" }),
   email: z.string().email({ message: "Invalid email address" }),
+  specialty: z.string().optional(),
+  clinic: z.string().optional(),
+  hospital: z.string().optional(),
   password: z
     .string()
     .min(8, { message: "Password must be at least 8 characters" }),
@@ -46,8 +50,12 @@ const SignUp = () => {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      name: "",
+      firstName: "",
+      lastName: "",
       email: "",
+      specialty: "",
+      clinic: "",
+      hospital: "",
       password: "",
       confirmPassword: "",
       agreeTerms: false,
@@ -55,7 +63,14 @@ const SignUp = () => {
   });
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
-    await signUp(values.email, values.password, values.name);
+    const fullName = `${values.firstName} ${values.lastName}`;
+    await signUp(values.email, values.password, fullName, {
+      firstName: values.firstName,
+      lastName: values.lastName,
+      specialty: values.specialty,
+      clinic: values.clinic,
+      hospital: values.hospital,
+    });
   };
 
   if (loading) {
@@ -86,19 +101,35 @@ const SignUp = () => {
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 mt-8">
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Full Name</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Enter your full name" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="firstName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>First Name</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Enter your first name" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="lastName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Last Name</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Enter your last name" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
 
             <FormField
               control={form.control}
@@ -113,6 +144,50 @@ const SignUp = () => {
                 </FormItem>
               )}
             />
+
+            <FormField
+              control={form.control}
+              name="specialty"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Specialty</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Enter your medical specialty" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="hospital"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Hospital</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Enter your hospital" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="clinic"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Clinic</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Enter your clinic" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
 
             <FormField
               control={form.control}

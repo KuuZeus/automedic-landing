@@ -3,7 +3,7 @@ import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
-import { UserCircle, Calendar, LayoutDashboard, LogOut } from "lucide-react";
+import { Calendar, LayoutDashboard, LogOut } from "lucide-react";
 
 const AuthNav = () => {
   const { signOut, user } = useAuth();
@@ -43,17 +43,6 @@ const AuthNav = () => {
               >
                 <Calendar className="h-4 w-4 mr-2" />
                 <span className="hidden md:inline">Schedule</span>
-              </Button>
-            </Link>
-            
-            <Link to="/user-profile">
-              <Button 
-                variant={location.pathname === "/user-profile" ? "default" : "ghost"} 
-                size="sm"
-                className={location.pathname === "/user-profile" ? "bg-health-600 hover:bg-health-700" : ""}
-              >
-                <UserCircle className="h-4 w-4 mr-2" />
-                <span className="hidden md:inline">Profile</span>
               </Button>
             </Link>
             

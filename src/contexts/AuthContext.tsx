@@ -5,11 +5,19 @@ import { useNavigate } from "react-router-dom";
 import { Session, User } from "@supabase/supabase-js";
 import { toast } from "sonner";
 
+type ProfileData = {
+  firstName?: string;
+  lastName?: string;
+  specialty?: string;
+  clinic?: string;
+  hospital?: string;
+}
+
 type AuthContextType = {
   session: Session | null;
   user: User | null;
   signIn: (email: string, password: string) => Promise<void>;
-  signUp: (email: string, password: string, name: string) => Promise<void>;
+  signUp: (email: string, password: string, name: string, profileData?: ProfileData) => Promise<void>;
   signOut: () => Promise<void>;
   loading: boolean;
 };
@@ -65,7 +73,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const signUp = async (email: string, password: string, name: string) => {
+  const signUp = async (email: string, password: string, name: string, profileData?: ProfileData) => {
     try {
       setLoading(true);
       const { error } = await supabase.auth.signUp({
@@ -73,8 +81,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         password,
         options: {
           data: {
-            first_name: name.split(' ')[0] || '',
-            last_name: name.split(' ').slice(1).join(' ') || '',
+            first_name: profileData?.firstName || name.split(' ')[0] || '',
+            last_name: profileData?.lastName || name.split(' ').slice(1).join(' ') || '',
+            specialty: profileData?.specialty || '',
+            clinic: profileData?.clinic || '',
+            hospital: profileData?.hospital || '',
           },
         },
       });
