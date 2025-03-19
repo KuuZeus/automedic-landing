@@ -4,7 +4,9 @@ import { format } from 'date-fns';
 
 export interface Patient {
   id: string;
-  name: string;
+  firstName: string;
+  middleName?: string;
+  lastName: string;
   time: string;
   purpose: string;
   status: 'pending' | 'attended';
@@ -33,7 +35,7 @@ export interface PatientAppointment {
   occupation?: string;
   hasInsurance?: boolean;
   insuranceNumber?: string;
-  diagnosis?: string;
+  diagnosis: string; // Made required
 }
 
 interface PatientStore {
@@ -49,7 +51,8 @@ interface PatientStore {
 const initialPatients: Patient[] = [
   { 
     id: "PAT-1001", 
-    name: "Abena Owusu", 
+    firstName: "Abena",
+    lastName: "Owusu", 
     time: "9:00 AM", 
     purpose: "Follow-up",
     status: "pending",
@@ -58,7 +61,8 @@ const initialPatients: Patient[] = [
   },
   { 
     id: "PAT-1042", 
-    name: "Kofi Mensah", 
+    firstName: "Kofi",
+    lastName: "Mensah", 
     time: "10:30 AM", 
     purpose: "Medication Review",
     status: "attended",
@@ -67,7 +71,8 @@ const initialPatients: Patient[] = [
   },
   { 
     id: "PAT-1107", 
-    name: "Ama Darko", 
+    firstName: "Ama",
+    lastName: "Darko", 
     time: "11:45 AM", 
     purpose: "Lab Results",
     status: "pending",
@@ -76,7 +81,8 @@ const initialPatients: Patient[] = [
   },
   { 
     id: "PAT-1205", 
-    name: "John Agyekum", 
+    firstName: "John",
+    lastName: "Agyekum", 
     time: "2:00 PM", 
     purpose: "New Consultation",
     status: "pending",
@@ -85,7 +91,8 @@ const initialPatients: Patient[] = [
   },
   { 
     id: "PAT-1253", 
-    name: "Fatima Ibrahim", 
+    firstName: "Fatima",
+    lastName: "Ibrahim", 
     time: "3:15 PM", 
     purpose: "Follow-up",
     status: "pending",
@@ -103,6 +110,7 @@ const initialAppointments: PatientAppointment[] = initialPatients.map(patient =>
   time: patient.time,
   purpose: patient.purpose,
   status: patient.status,
+  diagnosis: "Hypertension", // Add default diagnosis
 }));
 
 // Create historical data for the past 7 days
@@ -128,6 +136,7 @@ for (let i = 1; i <= pastDays; i++) {
       time: patient.time,
       purpose: patient.purpose,
       status: Math.random() > 0.3 ? 'attended' : 'pending', // 70% chance of being attended
+      diagnosis: "Common cold", // Add default diagnosis
     });
   });
 }
@@ -155,6 +164,7 @@ for (let i = 1; i <= futureDays; i++) {
       time: patient.time,
       purpose: patient.purpose,
       status: 'pending', // All future appointments are pending
+      diagnosis: "Check-up", // Add default diagnosis
     });
   });
 }

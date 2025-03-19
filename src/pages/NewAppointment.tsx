@@ -76,7 +76,9 @@ const DUMMY_PURPOSES = [
 
 // Form schema
 const formSchema = z.object({
-  patientName: z.string().min(2, { message: "Patient name is required" }),
+  firstName: z.string().min(2, { message: "First name is required" }),
+  middleName: z.string().optional(),
+  lastName: z.string().min(2, { message: "Last name is required" }),
   date: z.date({ required_error: "Date is required" }),
   time: z.string().min(1, { message: "Time is required" }),
   purpose: z.string().min(1, { message: "Purpose is required" }),
@@ -90,7 +92,7 @@ const formSchema = z.object({
   occupation: z.string().optional(),
   hasInsurance: z.boolean().default(false),
   insuranceNumber: z.string().optional(),
-  diagnosis: z.string().optional(),
+  diagnosis: z.string().min(1, { message: "Diagnosis is required" }),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -104,7 +106,9 @@ const NewAppointment = () => {
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      patientName: "",
+      firstName: "",
+      middleName: "",
+      lastName: "",
       date: new Date(),
       time: "",
       purpose: "",
@@ -166,12 +170,17 @@ const NewAppointment = () => {
       setSubmitting(true);
       const formattedTime = format(new Date(`2000-01-01T${values.time}`), 'h:mm a');
       const formattedDate = format(values.date, 'yyyy-MM-dd');
+      
+      // Construct full patient name
+      const patientName = values.middleName 
+        ? `${values.firstName} ${values.middleName} ${values.lastName}`
+        : `${values.firstName} ${values.lastName}`;
 
       const { error } = await supabase
         .from('appointments')
         .insert({
           patient_id: Math.random().toString(36).substring(2, 12), // This would normally be a real patient ID
-          patient_name: values.patientName,
+          patient_name: patientName,
           date: formattedDate,
           time: formattedTime,
           purpose: values.purpose,
@@ -186,7 +195,7 @@ const NewAppointment = () => {
           occupation: values.occupation || null,
           has_insurance: values.hasInsurance,
           insurance_number: values.hasInsurance ? values.insuranceNumber : null,
-          diagnosis: values.diagnosis || null,
+          diagnosis: values.diagnosis,
         });
 
       if (error) {
@@ -243,19 +252,50 @@ const NewAppointment = () => {
                 <div className="space-y-4 md:col-span-2">
                   <h2 className="text-lg font-semibold border-b pb-2">Patient Information</h2>
                   
-                  <FormField
-                    control={form.control}
-                    name="patientName"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Patient Name</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Enter patient name" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                  {/* Name fields */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="firstName"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>First Name</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Enter first name" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={form.control}
+                      name="middleName"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Middle Name (Optional)</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Enter middle name" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={form.control}
+                      name="lastName"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Last Name</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Enter last name" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <FormField
@@ -531,7 +571,7 @@ const NewAppointment = () => {
                     name="diagnosis"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Diagnosis (Optional)</FormLabel>
+                        <FormLabel>Diagnosis</FormLabel>
                         <FormControl>
                           <Textarea 
                             placeholder="Enter diagnosis or condition" 
