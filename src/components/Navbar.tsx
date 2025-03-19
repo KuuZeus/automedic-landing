@@ -32,8 +32,8 @@ const Navbar: React.FC = () => {
     >
       <div className="container max-w-7xl mx-auto px-4 md:px-6 flex items-center justify-between">
         <Link to="/" className="flex items-center space-x-2">
-          <RefreshCw className="h-5 w-5 sm:h-6 sm:w-6 text-health-600" strokeWidth={2.5} />
-          <span className="text-lg sm:text-2xl font-semibold bg-gradient-to-r from-health-700 to-health-500 bg-clip-text text-transparent">
+          <RefreshCw className="h-5 w-5 text-health-600" strokeWidth={2.5} />
+          <span className="text-lg md:text-xl lg:text-2xl font-semibold bg-gradient-to-r from-health-700 to-health-500 bg-clip-text text-transparent">
             SynchoraHealth
           </span>
         </Link>

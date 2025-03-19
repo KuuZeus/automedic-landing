@@ -9,33 +9,33 @@ const Hero: React.FC = () => {
     <section className="pt-28 lg:pt-36 pb-20 bg-gradient-to-b from-blue-50 to-white relative overflow-hidden">
       <div className="container max-w-7xl mx-auto px-4 md:px-6 relative z-10">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-          <div className="space-y-8">
+          <div className="space-y-6 md:space-y-8">
             <FadeIn delay={0.1}>
-              <span className="bg-health-100 text-health-800 px-4 py-1.5 rounded-full text-sm font-medium inline-block">
+              <span className="bg-health-100 text-health-800 px-3 py-1 text-xs md:text-sm font-medium inline-block rounded-full">
                 Revolutionizing Healthcare Scheduling
               </span>
             </FadeIn>
             
             <FadeIn delay={0.3}>
-              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-gray-900 leading-tight">
+              <h1 className="text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-bold tracking-tight text-gray-900 leading-tight">
                 Intelligent <span className="bg-gradient-to-r from-health-600 to-health-400 bg-clip-text text-transparent">Appointment</span> Automation
               </h1>
             </FadeIn>
             
             <FadeIn delay={0.5}>
-              <p className="text-lg md:text-xl text-gray-600 max-w-lg">
+              <p className="text-base md:text-lg text-gray-600 max-w-lg">
                 Reduce no-shows, optimize staff time, and improve patient experience with our AI-powered scheduling and reminder system.
               </p>
             </FadeIn>
             
             <FadeIn delay={0.7}>
               <div className="flex flex-col sm:flex-row gap-4">
-                <Button className="bg-health-600 hover:bg-health-700 text-white rounded-full h-12 px-8 text-base">
+                <Button className="bg-health-600 hover:bg-health-700 text-white rounded-full h-10 md:h-12 px-6 md:px-8 text-sm md:text-base">
                   Start Your Free Trial
                 </Button>
                 <Button 
                   variant="outline" 
-                  className="border-health-200 bg-white text-gray-700 hover:bg-gray-50 rounded-full h-12 px-8 text-base"
+                  className="border-health-200 bg-white text-gray-700 hover:bg-gray-50 rounded-full h-10 md:h-12 px-6 md:px-8 text-sm md:text-base"
                 >
                   Book A Demo
                 </Button>
@@ -43,24 +43,24 @@ const Hero: React.FC = () => {
             </FadeIn>
             
             <FadeIn delay={0.9}>
-              <div className="pt-6">
-                <p className="text-sm text-gray-500 mb-4">Trusted by leading healthcare providers</p>
-                <div className="flex flex-wrap gap-6 items-center">
+              <div className="pt-4 md:pt-6">
+                <p className="text-xs md:text-sm text-gray-500 mb-3 md:mb-4">Trusted by leading healthcare providers</p>
+                <div className="flex flex-wrap gap-4 md:gap-6 items-center">
                   {/* Hospital logos */}
                   <img 
                     src="/lovable-uploads/f31d6c18-387b-4866-96d8-eb8c16bb3959.png" 
                     alt="KATH" 
-                    className="h-12 object-contain"
+                    className="h-8 md:h-12 object-contain"
                   />
                   <img 
                     src="/lovable-uploads/de22656c-462c-4b9e-a126-819a8fb8a4a9.png" 
                     alt="KBTH" 
-                    className="h-12 object-contain"
+                    className="h-8 md:h-12 object-contain"
                   />
                   <img 
                     src="/lovable-uploads/0ad850dd-d43d-4cef-8432-cceb17af577d.png" 
                     alt="UGMC" 
-                    className="h-12 object-contain"
+                    className="h-8 md:h-12 object-contain"
                   />
                 </div>
               </div>
