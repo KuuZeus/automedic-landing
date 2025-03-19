@@ -1,12 +1,11 @@
 
-import React, { useEffect } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import React, { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
   Form,
   FormControl,
@@ -15,258 +14,192 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { useAuth } from "@/contexts/AuthContext";
+import { Input } from "@/components/ui/input";
+import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
 
 const formSchema = z.object({
-  firstName: z.string().min(2, { message: "First name must be at least 2 characters" }),
-  lastName: z.string().min(2, { message: "Last name must be at least 2 characters" }),
-  email: z.string().email({ message: "Invalid email address" }),
+  email: z.string().email({ message: "Please enter a valid email address" }),
+  password: z.string().min(6, { message: "Password must be at least 6 characters" }),
+  firstName: z.string().min(1, { message: "First name is required" }),
+  lastName: z.string().min(1, { message: "Last name is required" }),
   specialty: z.string().optional(),
   clinic: z.string().optional(),
   hospital: z.string().optional(),
-  password: z
-    .string()
-    .min(8, { message: "Password must be at least 8 characters" }),
-  confirmPassword: z.string(),
-  agreeTerms: z.boolean().refine((val) => val === true, {
-    message: "You must agree to the terms and conditions",
-  }),
-}).refine((data) => data.password === data.confirmPassword, {
-  message: "Passwords do not match",
-  path: ["confirmPassword"],
 });
 
+type FormValues = z.infer<typeof formSchema>;
+
 const SignUp = () => {
+  const { signUp } = useAuth();
   const navigate = useNavigate();
-  const { signUp, user, loading } = useAuth();
+  const [isLoading, setIsLoading] = useState(false);
 
-  // Redirect if user is already logged in
-  useEffect(() => {
-    if (user && !loading) {
-      navigate("/patient-schedule");
-    }
-  }, [user, loading, navigate]);
-
-  const form = useForm<z.infer<typeof formSchema>>({
+  const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
+      email: "",
+      password: "",
       firstName: "",
       lastName: "",
-      email: "",
       specialty: "",
       clinic: "",
       hospital: "",
-      password: "",
-      confirmPassword: "",
-      agreeTerms: false,
     },
   });
 
-  const onSubmit = async (values: z.infer<typeof formSchema>) => {
-    const fullName = `${values.firstName} ${values.lastName}`;
-    await signUp(values.email, values.password, fullName, {
-      firstName: values.firstName,
-      lastName: values.lastName,
-      specialty: values.specialty,
-      clinic: values.clinic,
-      hospital: values.hospital,
-    });
+  const onSubmit = async (data: FormValues) => {
+    setIsLoading(true);
+    try {
+      await signUp(data.email, data.password, `${data.firstName} ${data.lastName}`, {
+        firstName: data.firstName,
+        lastName: data.lastName,
+        specialty: data.specialty,
+        clinic: data.clinic,
+        hospital: data.hospital,
+      });
+      // Note: Navigation is handled in the signUp function
+    } catch (error) {
+      console.error("Sign-up error:", error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-health-600"></div>
-      </div>
-    );
-  }
-
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="w-full max-w-md space-y-8 bg-white p-8 rounded-xl shadow-lg">
-        <div className="text-center">
-          <h2 className="mt-6 text-3xl font-bold text-gray-900">
-            Create an account
-          </h2>
-          <p className="mt-2 text-sm text-gray-600">
-            Already have an account?{" "}
-            <Link
-              to="/sign-in"
-              className="font-medium text-health-600 hover:text-health-500 transition-colors"
-            >
-              Sign in
-            </Link>
-          </p>
-        </div>
-
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 mt-8">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div className="min-h-screen flex flex-col">
+      <Navbar />
+      <div className="flex-grow flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-gray-50">
+        <div className="max-w-md w-full space-y-8">
+          <div>
+            <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+              Create your account
+            </h2>
+            <p className="mt-2 text-center text-sm text-gray-600">
+              Or{" "}
+              <Link
+                to="/sign-in"
+                className="font-medium text-health-600 hover:text-health-500"
+              >
+                sign in to your existing account
+              </Link>
+            </p>
+          </div>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="firstName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>First Name</FormLabel>
+                      <FormControl>
+                        <Input placeholder="John" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="lastName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Last Name</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Doe" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
               <FormField
                 control={form.control}
-                name="firstName"
+                name="email"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>First Name</FormLabel>
+                    <FormLabel>Email address</FormLabel>
                     <FormControl>
-                      <Input placeholder="Enter your first name" {...field} />
+                      <Input
+                        type="email"
+                        placeholder="you@example.com"
+                        {...field}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-
               <FormField
                 control={form.control}
-                name="lastName"
+                name="password"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Last Name</FormLabel>
+                    <FormLabel>Password</FormLabel>
                     <FormControl>
-                      <Input placeholder="Enter your last name" {...field} />
+                      <Input
+                        type="password"
+                        placeholder="••••••••"
+                        {...field}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-            </div>
-
-            <FormField
-              control={form.control}
-              name="email"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Email</FormLabel>
-                  <FormControl>
-                    <Input type="email" placeholder="Enter your email" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="specialty"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Specialty</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Enter your medical specialty" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField
                 control={form.control}
-                name="hospital"
+                name="specialty"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Hospital</FormLabel>
+                    <FormLabel>Specialty (optional)</FormLabel>
                     <FormControl>
-                      <Input placeholder="Enter your hospital" {...field} />
+                      <Input placeholder="Cardiology" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-
               <FormField
                 control={form.control}
                 name="clinic"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Clinic</FormLabel>
+                    <FormLabel>Clinic (optional)</FormLabel>
                     <FormControl>
-                      <Input placeholder="Enter your clinic" {...field} />
+                      <Input placeholder="Health Clinic" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-            </div>
-
-            <FormField
-              control={form.control}
-              name="password"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Password</FormLabel>
-                  <FormControl>
-                    <Input type="password" placeholder="Create a password" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="confirmPassword"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Confirm Password</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="password"
-                      placeholder="Confirm your password"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="agreeTerms"
-              render={({ field }) => (
-                <FormItem className="flex flex-row items-start space-x-3 space-y-0 py-2">
-                  <FormControl>
-                    <Checkbox
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                    />
-                  </FormControl>
-                  <div className="space-y-1 leading-none">
-                    <FormLabel className="font-normal">
-                      I agree to the{" "}
-                      <a
-                        href="#"
-                        className="text-health-600 hover:text-health-500"
-                      >
-                        terms and conditions
-                      </a>
-                    </FormLabel>
+              <FormField
+                control={form.control}
+                name="hospital"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Hospital (optional)</FormLabel>
+                    <FormControl>
+                      <Input placeholder="City Hospital" {...field} />
+                    </FormControl>
                     <FormMessage />
-                  </div>
-                </FormItem>
-              )}
-            />
-
-            <Button
-              type="submit"
-              className="w-full py-6 bg-health-600 hover:bg-health-700"
-              disabled={loading}
-            >
-              {loading ? "Creating Account..." : "Create Account"}
-            </Button>
-          </form>
-        </Form>
-        
-        <div className="mt-4 text-center">
-          <Link
-            to="/platform"
-            className="text-sm text-health-600 hover:text-health-500"
-          >
-            Back to Platform
-          </Link>
+                  </FormItem>
+                )}
+              />
+              <Button
+                type="submit"
+                className="w-full bg-health-600 hover:bg-health-700"
+                disabled={isLoading}
+              >
+                {isLoading ? "Creating account..." : "Create account"}
+              </Button>
+            </form>
+          </Form>
         </div>
       </div>
+      <Footer />
     </div>
   );
 };
