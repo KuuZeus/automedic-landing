@@ -15,6 +15,7 @@ export interface Patient {
 export interface PatientAppointment {
   id: string;
   patientId: string;
+  patientName?: string; // Added for direct patient name from Supabase
   date: string; // ISO date string
   time: string;
   purpose: string;
@@ -178,7 +179,7 @@ export const usePatientStore = create<PatientStore>((set, get) => ({
     }));
   },
 
-  // New function to get appointments sorted by status and time
+  // Function to get appointments sorted by status and time
   getSortedAppointmentsByDate: (date: Date) => {
     const dateStr = format(date, 'yyyy-MM-dd');
     const appointmentsForDate = get().appointments.filter(appointment => appointment.date === dateStr);

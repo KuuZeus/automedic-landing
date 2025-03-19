@@ -4,29 +4,132 @@ import { useNavigate } from "react-router-dom";
 import AuthNav from "@/components/AuthNav";
 import Footer from "@/components/Footer";
 import { useAuth } from "@/contexts/AuthContext";
-import { usePatientStore, PatientAppointment, getPatientById } from "@/lib/patientDataService";
+import { PatientAppointment } from "@/lib/patientDataService";
 import { Calendar, Clock, User, FileText, CheckCircle2, XCircle } from "lucide-react";
-import { format, startOfToday } from "date-fns";
+import { format, parseISO, startOfToday } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+
+// Define type for the database appointment
+interface DbAppointment {
+  id: string;
+  patient_id: string;
+  patient_name: string;
+  date: string;
+  time: string;
+  purpose: string;
+  status: 'pending' | 'attended';
+  notes?: string;
+}
 
 const PatientSchedule = () => {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
   const [selectedDate, setSelectedDate] = useState<Date>(startOfToday());
-  const getSortedAppointmentsByDate = usePatientStore((state) => state.getSortedAppointmentsByDate);
-  const updateAppointmentStatus = usePatientStore((state) => state.updateAppointmentStatus);
   const [appointments, setAppointments] = useState<PatientAppointment[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Load appointments for the selected date
+  // Load appointments for the selected date from Supabase
   useEffect(() => {
     if (selectedDate) {
-      const appointmentsForDate = getSortedAppointmentsByDate(selectedDate);
-      setAppointments(appointmentsForDate);
+      fetchAppointments(selectedDate);
     }
-  }, [selectedDate, getSortedAppointmentsByDate]);
+  }, [selectedDate]);
+
+  // Fetch appointments for a specific date from Supabase
+  const fetchAppointments = async (date: Date) => {
+    try {
+      setIsLoading(true);
+      const formattedDate = format(date, 'yyyy-MM-dd');
+      
+      const { data, error } = await supabase
+        .from('appointments')
+        .select('*')
+        .eq('date', formattedDate)
+        .order('time');
+      
+      if (error) {
+        throw error;
+      }
+
+      // Convert database appointments to the PatientAppointment type
+      if (data) {
+        const formattedAppointments: PatientAppointment[] = data.map((appointment: DbAppointment) => ({
+          id: appointment.id,
+          patientId: appointment.patient_id,
+          date: appointment.date,
+          time: appointment.time,
+          purpose: appointment.purpose,
+          status: appointment.status,
+          notes: appointment.notes,
+          patientName: appointment.patient_name
+        }));
+
+        // Sort appointments by status (pending first) and then by time
+        const sortedAppointments = formattedAppointments.sort((a, b) => {
+          // First sort by status
+          if (a.status === 'pending' && b.status === 'attended') return -1;
+          if (a.status === 'attended' && b.status === 'pending') return 1;
+          
+          // If status is the same, sort by time
+          const timeA = convertTimeToMinutes(a.time);
+          const timeB = convertTimeToMinutes(b.time);
+          return timeA - timeB;
+        });
+
+        setAppointments(sortedAppointments);
+      }
+    } catch (error: any) {
+      toast.error(`Error fetching appointments: ${error.message}`);
+      console.error('Error fetching appointments:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Handle appointment status toggle
+  const handleStatusToggle = async (id: string, currentStatus: 'pending' | 'attended') => {
+    try {
+      const newStatus = currentStatus === 'pending' ? 'attended' : 'pending';
+      
+      // Update the appointment status in Supabase
+      const { error } = await supabase
+        .from('appointments')
+        .update({ status: newStatus })
+        .eq('id', id);
+      
+      if (error) {
+        throw error;
+      }
+      
+      // Update local state
+      const updatedAppointments = appointments.map(appointment => 
+        appointment.id === id ? { ...appointment, status: newStatus as 'pending' | 'attended' } : appointment
+      );
+      setAppointments(updatedAppointments);
+      
+      toast.success(`Appointment marked as ${newStatus}`);
+    } catch (error: any) {
+      toast.error(`Error updating status: ${error.message}`);
+      console.error('Error updating appointment status:', error);
+    }
+  };
+
+  // Helper function to convert time string (e.g., "9:00 AM") to minutes for sorting
+  const convertTimeToMinutes = (timeStr: string): number => {
+    const [time, period] = timeStr.split(' ');
+    let [hours, minutes] = time.split(':').map(Number);
+    
+    // Convert to 24-hour format for easier comparison
+    if (period === 'PM' && hours < 12) hours += 12;
+    if (period === 'AM' && hours === 12) hours = 0;
+    
+    return hours * 60 + minutes;
+  };
 
   // Redirect if user is not logged in
   useEffect(() => {
@@ -34,18 +137,6 @@ const PatientSchedule = () => {
       navigate("/sign-in");
     }
   }, [user, loading, navigate]);
-
-  // Handle appointment status toggle
-  const handleStatusToggle = (id: string, currentStatus: 'pending' | 'attended') => {
-    const newStatus = currentStatus === 'pending' ? 'attended' : 'pending';
-    updateAppointmentStatus(id, newStatus);
-    
-    // Update local state
-    const updatedAppointments = appointments.map(appointment => 
-      appointment.id === id ? { ...appointment, status: newStatus as 'pending' | 'attended' } : appointment
-    );
-    setAppointments(updatedAppointments);
-  };
 
   if (loading) {
     return (
@@ -92,32 +183,40 @@ const PatientSchedule = () => {
             </div>
           </div>
           
-          <Tabs defaultValue="all" className="w-full">
-            <TabsList className="mb-6">
-              <TabsTrigger value="all">All</TabsTrigger>
-              <TabsTrigger value="pending">Pending</TabsTrigger>
-              <TabsTrigger value="attended">Attended</TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="all" className="space-y-4">
-              {renderAppointmentsList(appointments, handleStatusToggle)}
-            </TabsContent>
-            
-            <TabsContent value="pending" className="space-y-4">
-              {renderAppointmentsList(appointments.filter(a => a.status === 'pending'), handleStatusToggle)}
-            </TabsContent>
-            
-            <TabsContent value="attended" className="space-y-4">
-              {renderAppointmentsList(appointments.filter(a => a.status === 'attended'), handleStatusToggle)}
-            </TabsContent>
-          </Tabs>
-          
-          {appointments.length === 0 && (
-            <div className="text-center py-12 text-gray-500">
-              <Calendar className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-              <p className="text-lg">No appointments scheduled for this date</p>
-              <p className="text-sm">Select a different date or add an appointment</p>
+          {isLoading ? (
+            <div className="flex justify-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-health-600"></div>
             </div>
+          ) : (
+            <>
+              <Tabs defaultValue="all" className="w-full">
+                <TabsList className="mb-6">
+                  <TabsTrigger value="all">All</TabsTrigger>
+                  <TabsTrigger value="pending">Pending</TabsTrigger>
+                  <TabsTrigger value="attended">Attended</TabsTrigger>
+                </TabsList>
+                
+                <TabsContent value="all" className="space-y-4">
+                  {renderAppointmentsList(appointments, handleStatusToggle)}
+                </TabsContent>
+                
+                <TabsContent value="pending" className="space-y-4">
+                  {renderAppointmentsList(appointments.filter(a => a.status === 'pending'), handleStatusToggle)}
+                </TabsContent>
+                
+                <TabsContent value="attended" className="space-y-4">
+                  {renderAppointmentsList(appointments.filter(a => a.status === 'attended'), handleStatusToggle)}
+                </TabsContent>
+              </Tabs>
+              
+              {appointments.length === 0 && (
+                <div className="text-center py-12 text-gray-500">
+                  <Calendar className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+                  <p className="text-lg">No appointments scheduled for this date</p>
+                  <p className="text-sm">Select a different date or add an appointment</p>
+                </div>
+              )}
+            </>
           )}
         </div>
       </main>
@@ -132,8 +231,6 @@ const renderAppointmentsList = (
   handleStatusToggle: (id: string, status: 'pending' | 'attended') => void
 ) => {
   return appointments.map((appointment) => {
-    const patient = getPatientById(appointment.patientId);
-    
     return (
       <Card key={appointment.id} className="p-4 border border-gray-200">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -148,7 +245,7 @@ const renderAppointmentsList = (
             
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="font-medium">{patient?.name}</h3>
+                <h3 className="font-medium">{appointment.patientName}</h3>
                 <Badge 
                   variant="outline" 
                   className={`${appointment.status === 'pending' ? 'bg-yellow-50 text-yellow-700' : 'bg-green-50 text-green-700'}`}
