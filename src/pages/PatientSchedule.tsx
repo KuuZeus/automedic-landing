@@ -1,11 +1,10 @@
-
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import AuthNav from "@/components/AuthNav";
 import Footer from "@/components/Footer";
 import { useAuth } from "@/contexts/AuthContext";
 import { PatientAppointment } from "@/lib/patientDataService";
-import { Calendar, Clock, User, FileText, CheckCircle2, XCircle, Filter, Hospital, Building } from "lucide-react";
+import { Calendar, Clock, User, FileText, CheckCircle2, XCircle, Filter, Hospital, Building, CalendarPlus } from "lucide-react";
 import { format, parseISO, startOfToday } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -28,6 +27,20 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
 
 // Define type for the database appointment that matches Supabase table structure
 interface DbAppointment {
@@ -37,7 +50,7 @@ interface DbAppointment {
   date: string;
   time: string;
   purpose: string;
-  status: string; // Changed from 'pending' | 'attended' to string to match Supabase response
+  status: string;
   notes?: string;
   created_at: string;
   updated_at: string;
@@ -52,6 +65,16 @@ interface ProfileData {
   clinic: string | null;
 }
 
+// Define schema for the new appointment form
+const appointmentFormSchema = z.object({
+  patientName: z.string().min(2, { message: "Patient name is required" }),
+  patientId: z.string().min(2, { message: "Patient ID is required" }),
+  date: z.string().min(1, { message: "Date is required" }),
+  time: z.string().min(1, { message: "Time is required" }),
+  purpose: z.string().min(1, { message: "Purpose is required" }),
+  notes: z.string().optional(),
+});
+
 const PatientSchedule = () => {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
@@ -63,8 +86,8 @@ const PatientSchedule = () => {
   const [uniquePurposes, setUniquePurposes] = useState<string[]>([]);
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
   const [currentAppointmentId, setCurrentAppointmentId] = useState<string>("");
+  const [isNewAppointmentOpen, setIsNewAppointmentOpen] = useState(false);
 
-  // Fetch user profile to get hospital and clinic
   useEffect(() => {
     const fetchUserProfile = async () => {
       if (!user) return;
@@ -89,7 +112,6 @@ const PatientSchedule = () => {
     fetchUserProfile();
   }, [user]);
 
-  // Load appointments for the selected date from Supabase
   useEffect(() => {
     if (selectedDate && profile.hospital && profile.clinic) {
       fetchAppointments(selectedDate);
@@ -98,7 +120,6 @@ const PatientSchedule = () => {
     }
   }, [selectedDate, profile, user]);
 
-  // Fetch appointments for a specific date from Supabase
   const fetchAppointments = async (date: Date) => {
     try {
       setIsLoading(true);
@@ -109,7 +130,6 @@ const PatientSchedule = () => {
         .select('*')
         .eq('date', formattedDate);
       
-      // Filter by hospital and clinic if available
       if (profile.hospital) {
         query = query.eq('hospital', profile.hospital);
       }
@@ -118,7 +138,6 @@ const PatientSchedule = () => {
         query = query.eq('clinic', profile.clinic);
       }
       
-      // Order by time
       query = query.order('time');
       
       const { data, error } = await query;
@@ -127,13 +146,11 @@ const PatientSchedule = () => {
         throw error;
       }
 
-      // Collect unique purposes for filtering
       if (data) {
         const purposes = [...new Set(data.map((appointment: DbAppointment) => appointment.purpose))];
         setUniquePurposes(purposes);
       }
 
-      // Convert database appointments to the PatientAppointment type
       if (data) {
         const formattedAppointments: PatientAppointment[] = data.map((appointment: DbAppointment) => ({
           id: appointment.id,
@@ -141,7 +158,6 @@ const PatientSchedule = () => {
           date: appointment.date,
           time: appointment.time,
           purpose: appointment.purpose,
-          // Cast the status to either 'pending' or 'attended'
           status: appointment.status === 'attended' ? 'attended' : 'pending',
           notes: appointment.notes,
           patientName: appointment.patient_name,
@@ -150,7 +166,6 @@ const PatientSchedule = () => {
           clinic: appointment.clinic
         }));
 
-        // Filter appointments by purpose if filter is set
         let filteredAppointments = formattedAppointments;
         if (purposeFilter) {
           filteredAppointments = formattedAppointments.filter(
@@ -158,13 +173,10 @@ const PatientSchedule = () => {
           );
         }
 
-        // Sort appointments by status (pending first) and then by time
         const sortedAppointments = filteredAppointments.sort((a, b) => {
-          // First sort by status
           if (a.status === 'pending' && b.status === 'attended') return -1;
           if (a.status === 'attended' && b.status === 'pending') return 1;
           
-          // If status is the same, sort by time
           const timeA = convertTimeToMinutes(a.time);
           const timeB = convertTimeToMinutes(b.time);
           return timeA - timeB;
@@ -180,41 +192,33 @@ const PatientSchedule = () => {
     }
   };
 
-  // Handle appointment status toggle and open review modal
   const handleStatusToggle = (id: string, currentStatus: 'pending' | 'attended') => {
-    // Only show the modal when marking as attended
     if (currentStatus === 'pending') {
       setCurrentAppointmentId(id);
       setIsReviewModalOpen(true);
     } else {
-      // If marking as pending, don't need next review
       updateAppointmentStatus(id, 'pending');
     }
   };
 
-  // Save next review date and update appointment status
   const handleSaveReviewDate = async (reviewDate: string) => {
     await updateAppointmentStatus(currentAppointmentId, 'attended', reviewDate);
   };
 
-  // Update the appointment status in Supabase
   const updateAppointmentStatus = async (
     id: string, 
     newStatus: 'pending' | 'attended',
     nextReviewDate?: string
   ) => {
     try {
-      // Create update object
       const updateData: { status: string; next_review_date?: string } = { 
         status: newStatus
       };
       
-      // Add next review date if provided
       if (nextReviewDate) {
         updateData.next_review_date = nextReviewDate;
       }
       
-      // Update the appointment status in Supabase
       const { error } = await supabase
         .from('appointments')
         .update(updateData)
@@ -224,7 +228,6 @@ const PatientSchedule = () => {
         throw error;
       }
       
-      // Update local state
       const updatedAppointments = appointments.map(appointment => 
         appointment.id === id ? { 
           ...appointment, 
@@ -241,26 +244,21 @@ const PatientSchedule = () => {
     }
   };
 
-  // Helper function to convert time string (e.g., "9:00 AM") to minutes for sorting
   const convertTimeToMinutes = (timeStr: string): number => {
     const [time, period] = timeStr.split(' ');
     let [hours, minutes] = time.split(':').map(Number);
     
-    // Convert to 24-hour format for easier comparison
     if (period === 'PM' && hours < 12) hours += 12;
     if (period === 'AM' && hours === 12) hours = 0;
     
     return hours * 60 + minutes;
   };
 
-  // Apply purpose filter
   const handleFilterChange = (purpose: string) => {
     setPurposeFilter(purpose === purposeFilter ? "" : purpose);
-    // Reapply the filter
     fetchAppointments(selectedDate);
   };
 
-  // Redirect if user is not logged in
   useEffect(() => {
     if (!loading && !user) {
       navigate("/sign-in");
@@ -275,7 +273,6 @@ const PatientSchedule = () => {
     );
   }
 
-  // Return early if user is not authenticated
   if (!user) return null;
 
   return (
@@ -287,7 +284,6 @@ const PatientSchedule = () => {
             <div>
               <h1 className="text-2xl font-bold text-gray-900">Patient Schedule</h1>
               
-              {/* Display hospital and clinic information */}
               {profile.hospital && (
                 <div className="flex items-center gap-1 text-gray-600 mt-1">
                   <Hospital className="h-4 w-4" />
@@ -302,6 +298,27 @@ const PatientSchedule = () => {
                 </div>
               )}
             </div>
+            
+            <Dialog open={isNewAppointmentOpen} onOpenChange={setIsNewAppointmentOpen}>
+              <DialogTrigger asChild>
+                <Button className="bg-health-600 hover:bg-health-700 flex items-center gap-2">
+                  <CalendarPlus className="h-4 w-4" />
+                  <span>Make New Appointment</span>
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-md">
+                <DialogHeader>
+                  <DialogTitle>Add New Appointment</DialogTitle>
+                  <DialogDescription>
+                    Fill in the details to schedule a new patient appointment.
+                  </DialogDescription>
+                </DialogHeader>
+                <NewAppointmentForm
+                  onSubmit={addAppointment}
+                  selectedDate={selectedDate}
+                />
+              </DialogContent>
+            </Dialog>
           </div>
           
           <div className="mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
@@ -315,7 +332,6 @@ const PatientSchedule = () => {
               />
             </div>
             
-            {/* Purpose filter */}
             <Popover>
               <PopoverTrigger asChild>
                 <Button variant="outline" className="gap-2">
@@ -414,7 +430,6 @@ const PatientSchedule = () => {
         </div>
       </main>
       
-      {/* Review Date Modal */}
       <ReviewDateModal
         isOpen={isReviewModalOpen}
         onClose={() => setIsReviewModalOpen(false)}
@@ -427,7 +442,135 @@ const PatientSchedule = () => {
   );
 };
 
-// Appointments table component to reduce complexity
+const NewAppointmentForm = ({ 
+  onSubmit,
+  selectedDate
+}: { 
+  onSubmit: (data: z.infer<typeof appointmentFormSchema>) => void,
+  selectedDate: Date
+}) => {
+  const form = useForm<z.infer<typeof appointmentFormSchema>>({
+    resolver: zodResolver(appointmentFormSchema),
+    defaultValues: {
+      patientName: "",
+      patientId: "",
+      date: format(selectedDate, 'yyyy-MM-dd'),
+      time: "",
+      purpose: "",
+      notes: ""
+    }
+  });
+
+  return (
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        <FormField
+          control={form.control}
+          name="patientName"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Patient Name</FormLabel>
+              <FormControl>
+                <Input placeholder="Enter patient name" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        
+        <FormField
+          control={form.control}
+          name="patientId"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Patient ID</FormLabel>
+              <FormControl>
+                <Input placeholder="Enter patient ID" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        
+        <div className="grid grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="date"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Date</FormLabel>
+                <FormControl>
+                  <Input type="date" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          
+          <FormField
+            control={form.control}
+            name="time"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Time</FormLabel>
+                <FormControl>
+                  <Input type="time" {...field} 
+                    onChange={(e) => {
+                      const timeValue = e.target.value;
+                      if (timeValue) {
+                        const [hours, minutes] = timeValue.split(':');
+                        const hour = parseInt(hours, 10);
+                        const period = hour >= 12 ? 'PM' : 'AM';
+                        const formattedHour = hour % 12 || 12;
+                        field.onChange(`${formattedHour}:${minutes} ${period}`);
+                      }
+                    }}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+        
+        <FormField
+          control={form.control}
+          name="purpose"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Purpose</FormLabel>
+              <FormControl>
+                <Input placeholder="Reason for appointment" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        
+        <FormField
+          control={form.control}
+          name="notes"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Notes (optional)</FormLabel>
+              <FormControl>
+                <Input placeholder="Additional notes" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        
+        <DialogFooter>
+          <Button type="submit" className="bg-health-600 hover:bg-health-700">
+            Schedule Appointment
+          </Button>
+        </DialogFooter>
+      </form>
+    </Form>
+  );
+};
+
 const AppointmentsTable = ({ 
   appointments, 
   handleStatusToggle 
