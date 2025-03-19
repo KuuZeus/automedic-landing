@@ -3,6 +3,7 @@ import React from "react";
 import { Button } from "../components/ui/button";
 import FadeIn from "./animations/FadeIn";
 import { CalendarCheck, BellRing, PhoneCall } from "lucide-react";
+import { Link } from "react-router-dom";
 
 const Hero: React.FC = () => {
   return (
@@ -30,14 +31,15 @@ const Hero: React.FC = () => {
             
             <FadeIn delay={0.7}>
               <div className="flex flex-col sm:flex-row gap-4">
-                <Button className="bg-health-600 hover:bg-health-700 text-white rounded-full h-10 md:h-12 px-6 md:px-8 text-sm md:text-base">
-                  Start Your Free Trial
+                <Button className="bg-health-600 hover:bg-health-700 text-white rounded-full h-10 md:h-12 px-6 md:px-8 text-sm md:text-base" asChild>
+                  <Link to="/contact">Start Your Free Trial</Link>
                 </Button>
                 <Button 
                   variant="outline" 
                   className="border-health-200 bg-white text-gray-700 hover:bg-gray-50 rounded-full h-10 md:h-12 px-6 md:px-8 text-sm md:text-base"
+                  asChild
                 >
-                  Book A Demo
+                  <Link to="/contact">Book A Demo</Link>
                 </Button>
               </div>
             </FadeIn>

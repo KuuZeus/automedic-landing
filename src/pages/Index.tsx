@@ -21,7 +21,7 @@ const Index = () => {
           <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-4 md:mb-6">Start Managing Appointments Today</h2>
           <div className="flex justify-center">
             <Button className="bg-health-600 hover:bg-health-700 h-10 md:h-12 text-sm md:text-base px-6 md:px-8" asChild>
-              <Link to="/sign-up">Get Started</Link>
+              <Link to="/contact">Get Started</Link>
             </Button>
           </div>
         </div>

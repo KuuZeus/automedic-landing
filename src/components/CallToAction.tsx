@@ -2,6 +2,7 @@
 import React from "react";
 import { Button } from "../components/ui/button";
 import FadeIn from "./animations/FadeIn";
+import { Link } from "react-router-dom";
 
 const CallToAction: React.FC = () => {
   return (
@@ -122,8 +123,9 @@ const CallToAction: React.FC = () => {
                       ? "bg-health-600 hover:bg-health-700 text-white" 
                       : "bg-white border border-gray-200 text-gray-800 hover:bg-gray-50"
                   }`}
+                  asChild
                 >
-                  {plan.buttonText}
+                  <Link to="/contact">{plan.buttonText}</Link>
                 </Button>
               </div>
             </FadeIn>
@@ -135,8 +137,8 @@ const CallToAction: React.FC = () => {
             <p className="text-gray-600 mb-4">
               Need a custom solution? Our team is ready to help.
             </p>
-            <Button variant="outline" className="rounded-full border-health-200 hover:border-health-300">
-              Contact Our Sales Team
+            <Button variant="outline" className="rounded-full border-health-200 hover:border-health-300" asChild>
+              <Link to="/contact">Contact Our Sales Team</Link>
             </Button>
           </div>
         </FadeIn>
