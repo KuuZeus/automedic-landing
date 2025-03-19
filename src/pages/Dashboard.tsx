@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import AuthNav from "@/components/AuthNav";
@@ -20,21 +19,23 @@ import {
   Clipboard,
   Hospital,
   UserCircle,
-  Mail
+  Mail,
+  BarChart
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import {
-  BarChart,
+  BarChart as RechartsBarChart,
   Bar,
   XAxis,
   YAxis,
   CartesianGrid,
-  Tooltip,
+  Tooltip as RechartsTooltip,
   ResponsiveContainer,
   PieChart,
   Pie,
-  Cell
+  Cell,
+  Legend
 } from "recharts";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 
@@ -58,20 +59,17 @@ const Dashboard = () => {
   const [appointmentsByMonth, setAppointmentsByMonth] = useState([]);
   const navigate = useNavigate();
 
-  // Redirect if user is not logged in
   useEffect(() => {
     if (!loading && !user) {
       navigate("/sign-in");
     }
   }, [user, loading, navigate]);
 
-  // Fetch user profile data and stats
   useEffect(() => {
     const fetchUserData = async () => {
       if (user) {
         setIsLoading(true);
         try {
-          // Fetch profile data
           const { data: profileData, error: profileError } = await supabase
             .from('profiles')
             .select('*')
@@ -89,7 +87,6 @@ const Dashboard = () => {
             setRole(profileData.role || "User");
           }
 
-          // Fetch appointment statistics
           const { data: appointmentsData, error: appointmentsError } = await supabase
             .from('appointments')
             .select('status, purpose, date');
@@ -109,7 +106,6 @@ const Dashboard = () => {
               canceled: canceledCount
             });
 
-            // Group appointments by purpose for pie chart
             const purposeGroups = {};
             appointmentsData.forEach(app => {
               purposeGroups[app.purpose] = (purposeGroups[app.purpose] || 0) + 1;
@@ -121,7 +117,6 @@ const Dashboard = () => {
             }));
             setAppointmentsByPurpose(purposeData);
 
-            // Group appointments by month for bar chart
             const months = {};
             appointmentsData.forEach(app => {
               const date = new Date(app.date);
@@ -192,11 +187,9 @@ const Dashboard = () => {
     );
   }
 
-  // Return early if user is not authenticated
   if (!user) return null;
 
-  // Colors for PieChart
-  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
+  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d'];
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
@@ -207,7 +200,6 @@ const Dashboard = () => {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {/* User Profile Card */}
           <Card className="md:col-span-1">
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
@@ -246,7 +238,6 @@ const Dashboard = () => {
                       </div>
                     )}
                     
-                    {/* Left-aligned details with titles */}
                     <div className="space-y-2 text-left">
                       <div className="flex items-center">
                         <Mail className="h-4 w-4 text-health-600 mr-2" />
@@ -339,7 +330,6 @@ const Dashboard = () => {
             </CardContent>
           </Card>
 
-          {/* Dashboard Overview */}
           <div className="md:col-span-2 space-y-6">
             <Tabs defaultValue="overview" className="w-full">
               <TabsList className="mb-4">
@@ -479,23 +469,29 @@ const Dashboard = () => {
                           <h3 className="text-md font-medium mb-4">Appointments by Purpose</h3>
                           <div className="h-64">
                             <ResponsiveContainer width="100%" height="100%">
-                              <PieChart>
-                                <Pie
-                                  data={appointmentsByPurpose}
-                                  cx="50%"
-                                  cy="50%"
-                                  labelLine={false}
-                                  outerRadius={80}
-                                  fill="#8884d8"
-                                  dataKey="value"
-                                  label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                              <RechartsBarChart
+                                data={appointmentsByPurpose}
+                                margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                              >
+                                <CartesianGrid strokeDasharray="3 3" />
+                                <XAxis dataKey="name" />
+                                <YAxis allowDecimals={false} />
+                                <RechartsTooltip 
+                                  formatter={(value, name) => [`${value} appointments`, 'Total']}
+                                  labelFormatter={(label) => `Purpose: ${label}`}
+                                />
+                                <Legend />
+                                <Bar 
+                                  dataKey="value" 
+                                  name="Appointments" 
+                                  fill="#0369a1"
+                                  radius={[4, 4, 0, 0]}
                                 >
                                   {appointmentsByPurpose.map((entry, index) => (
                                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                                   ))}
-                                </Pie>
-                                <Tooltip />
-                              </PieChart>
+                                </Bar>
+                              </RechartsBarChart>
                             </ResponsiveContainer>
                           </div>
                         </div>
