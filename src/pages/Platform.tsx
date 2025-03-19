@@ -1,11 +1,12 @@
 
 import React from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, LogIn, UserPlus } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const Platform = () => {
   return (
@@ -22,41 +23,43 @@ const Platform = () => {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+          <div className="max-w-md mx-auto">
             <Card className="shadow-md hover:shadow-lg transition-shadow">
               <CardHeader>
-                <CardTitle>Sign In</CardTitle>
+                <CardTitle className="text-center">Account Access</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-gray-600">
-                  Already have an account? Sign in to access your dashboard, manage appointments and view patient records.
-                </p>
+                <Tabs defaultValue="signin" className="w-full">
+                  <TabsList className="grid w-full grid-cols-2 mb-4">
+                    <TabsTrigger value="signin">Sign In</TabsTrigger>
+                    <TabsTrigger value="signup">Create Account</TabsTrigger>
+                  </TabsList>
+                  
+                  <TabsContent value="signin">
+                    <p className="text-gray-600 mb-4">
+                      Already have an account? Sign in to access your dashboard, manage appointments and view patient records.
+                    </p>
+                    <Link to="/sign-in" className="w-full">
+                      <Button className="w-full bg-health-600 hover:bg-health-700">
+                        <LogIn className="mr-2 h-4 w-4" />
+                        Sign In
+                      </Button>
+                    </Link>
+                  </TabsContent>
+                  
+                  <TabsContent value="signup">
+                    <p className="text-gray-600 mb-4">
+                      New to SynchoraHealth? Create an account to start managing your healthcare practice efficiently.
+                    </p>
+                    <Link to="/sign-up" className="w-full">
+                      <Button className="w-full bg-health-600 hover:bg-health-700">
+                        <UserPlus className="mr-2 h-4 w-4" />
+                        Create Account
+                      </Button>
+                    </Link>
+                  </TabsContent>
+                </Tabs>
               </CardContent>
-              <CardFooter>
-                <Link to="/sign-in" className="w-full">
-                  <Button className="w-full bg-health-600 hover:bg-health-700">
-                    Sign In <ArrowRight className="ml-2 h-4 w-4" />
-                  </Button>
-                </Link>
-              </CardFooter>
-            </Card>
-
-            <Card className="shadow-md hover:shadow-lg transition-shadow">
-              <CardHeader>
-                <CardTitle>Create Account</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-gray-600">
-                  New to SynchoraHealth? Create an account to start managing your healthcare practice efficiently.
-                </p>
-              </CardContent>
-              <CardFooter>
-                <Link to="/sign-up" className="w-full">
-                  <Button className="w-full bg-health-600 hover:bg-health-700">
-                    Sign Up <ArrowRight className="ml-2 h-4 w-4" />
-                  </Button>
-                </Link>
-              </CardFooter>
             </Card>
           </div>
         </div>
