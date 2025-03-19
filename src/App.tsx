@@ -11,6 +11,7 @@ import SignIn from "./pages/SignIn";
 import SignUp from "./pages/SignUp";
 import Dashboard from "./pages/Dashboard";
 import PatientSchedule from "./pages/PatientSchedule";
+import NewAppointment from "./pages/NewAppointment";
 import Platform from "./pages/Platform";
 
 const queryClient = new QueryClient();
@@ -29,6 +30,7 @@ const App = () => (
             <Route path="/sign-up" element={<SignUp />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/patient-schedule" element={<PatientSchedule />} />
+            <Route path="/new-appointment" element={<NewAppointment />} />
             {/* Redirect /user-profile to /dashboard */}
             <Route path="/user-profile" element={<Navigate to="/dashboard" replace />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

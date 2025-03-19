@@ -1,13 +1,13 @@
+
 import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import AuthNav from "@/components/AuthNav";
 import Footer from "@/components/Footer";
 import { useAuth } from "@/contexts/AuthContext";
 import { PatientAppointment } from "@/lib/patientDataService";
-import { Calendar, Clock, User, FileText, CheckCircle2, XCircle, Filter, Hospital, Building, CalendarPlus } from "lucide-react";
+import { Calendar, Clock, CheckCircle2, XCircle, Filter, Hospital, Building, CalendarPlus } from "lucide-react";
 import { format, parseISO, startOfToday } from "date-fns";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
@@ -27,27 +27,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
-import { useForm } from "react-hook-form";
-import { z } from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 
 interface DbAppointment {
   id: string;
@@ -63,24 +42,20 @@ interface DbAppointment {
   next_review_date?: string;
   hospital?: string;
   clinic?: string;
+  gender?: string;
+  phone_number?: string;
+  email?: string;
+  address?: string;
+  occupation?: string;
+  has_insurance?: boolean;
+  insurance_number?: string;
+  diagnosis?: string;
 }
 
 interface ProfileData {
   hospital: string | null;
   clinic: string | null;
 }
-
-const appointmentFormSchema = z.object({
-  patientName: z.string().min(2, { message: "Patient name is required" }),
-  patientId: z.string().min(2, { message: "Patient ID is required" }),
-  date: z.string().min(1, { message: "Date is required" }),
-  time: z.string().min(1, { message: "Time is required" }),
-  purpose: z.string().min(1, { message: "Purpose is required" }),
-  notes: z.string().optional(),
-  appointmentType: z.enum(["internal", "external"]),
-  hospital: z.string().min(1, { message: "Hospital is required" }),
-  clinic: z.string().optional(),
-});
 
 const PatientSchedule = () => {
   const { user, loading } = useAuth();
@@ -93,7 +68,6 @@ const PatientSchedule = () => {
   const [uniquePurposes, setUniquePurposes] = useState<string[]>([]);
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
   const [currentAppointmentId, setCurrentAppointmentId] = useState<string>("");
-  const [isNewAppointmentOpen, setIsNewAppointmentOpen] = useState(false);
 
   useEffect(() => {
     const fetchUserProfile = async () => {
@@ -170,7 +144,15 @@ const PatientSchedule = () => {
           patientName: appointment.patient_name,
           nextReviewDate: appointment.next_review_date,
           hospital: appointment.hospital,
-          clinic: appointment.clinic
+          clinic: appointment.clinic,
+          gender: appointment.gender,
+          phoneNumber: appointment.phone_number,
+          email: appointment.email,
+          address: appointment.address,
+          occupation: appointment.occupation,
+          hasInsurance: appointment.has_insurance,
+          insuranceNumber: appointment.insurance_number,
+          diagnosis: appointment.diagnosis
         }));
 
         let filteredAppointments = formattedAppointments;
@@ -196,51 +178,6 @@ const PatientSchedule = () => {
       console.error('Error fetching appointments:', error);
     } finally {
       setIsLoading(false);
-    }
-  };
-
-  const addAppointment = async (data: z.infer<typeof appointmentFormSchema>) => {
-    try {
-      if (!user) {
-        toast.error("You must be logged in to create an appointment");
-        return;
-      }
-
-      let hospitalValue = data.hospital;
-      let clinicValue = data.clinic;
-
-      if (data.appointmentType === "internal") {
-        hospitalValue = profile.hospital || data.hospital;
-      }
-
-      const appointmentData = {
-        patient_id: data.patientId,
-        patient_name: data.patientName,
-        date: data.date,
-        time: data.time,
-        purpose: data.purpose,
-        notes: data.notes || null,
-        status: 'pending',
-        hospital: hospitalValue,
-        clinic: clinicValue
-      };
-
-      const { data: newAppointment, error } = await supabase
-        .from('appointments')
-        .insert(appointmentData)
-        .select('*')
-        .single();
-
-      if (error) {
-        throw error;
-      }
-
-      toast.success("Appointment created successfully");
-      setIsNewAppointmentOpen(false);
-      fetchAppointments(selectedDate);
-    } catch (error: any) {
-      toast.error(`Error creating appointment: ${error.message}`);
-      console.error('Error creating appointment:', error);
     }
   };
 
@@ -351,28 +288,15 @@ const PatientSchedule = () => {
               )}
             </div>
             
-            <Dialog open={isNewAppointmentOpen} onOpenChange={setIsNewAppointmentOpen}>
-              <DialogTrigger asChild>
-                <Button className="bg-health-600 hover:bg-health-700 flex items-center gap-2">
-                  <CalendarPlus className="h-4 w-4" />
-                  <span>Make New Appointment</span>
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-md">
-                <DialogHeader>
-                  <DialogTitle>Add New Appointment</DialogTitle>
-                  <DialogDescription>
-                    Fill in the details to schedule a new patient appointment.
-                  </DialogDescription>
-                </DialogHeader>
-                <NewAppointmentForm
-                  onSubmit={addAppointment}
-                  selectedDate={selectedDate}
-                  currentHospital={profile.hospital}
-                  currentClinic={profile.clinic}
-                />
-              </DialogContent>
-            </Dialog>
+            <Button 
+              className="bg-health-600 hover:bg-health-700 flex items-center gap-2"
+              asChild
+            >
+              <Link to="/new-appointment">
+                <CalendarPlus className="h-4 w-4" />
+                <span>Make New Appointment</span>
+              </Link>
+            </Button>
           </div>
           
           <div className="mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
@@ -531,254 +455,6 @@ const DUMMY_PURPOSES = [
   "Specialist Referral",
   "Emergency",
 ];
-
-const NewAppointmentForm = ({ 
-  onSubmit,
-  selectedDate,
-  currentHospital,
-  currentClinic
-}: { 
-  onSubmit: (data: z.infer<typeof appointmentFormSchema>) => void,
-  selectedDate: Date,
-  currentHospital: string | null,
-  currentClinic: string | null
-}) => {
-  const [appointmentType, setAppointmentType] = useState<string>("internal");
-
-  const form = useForm<z.infer<typeof appointmentFormSchema>>({
-    resolver: zodResolver(appointmentFormSchema),
-    defaultValues: {
-      patientName: "",
-      patientId: "",
-      date: format(selectedDate, 'yyyy-MM-dd'),
-      time: "",
-      purpose: "",
-      notes: "",
-      appointmentType: "internal",
-      hospital: currentHospital || "",
-      clinic: currentClinic || ""
-    }
-  });
-
-  const watchAppointmentType = form.watch("appointmentType");
-
-  useEffect(() => {
-    if (watchAppointmentType === "internal") {
-      form.setValue("hospital", currentHospital || "");
-    } else if (watchAppointmentType === "external" && form.getValues("hospital") === currentHospital) {
-      form.setValue("hospital", "");
-    }
-  }, [watchAppointmentType, currentHospital, form]);
-
-  return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-        <FormField
-          control={form.control}
-          name="appointmentType"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Appointment Type</FormLabel>
-              <FormControl>
-                <Select
-                  onValueChange={(value) => {
-                    field.onChange(value);
-                    setAppointmentType(value);
-                  }}
-                  defaultValue={field.value}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="internal">Internal (Same Hospital)</SelectItem>
-                    <SelectItem value="external">External (Different Hospital)</SelectItem>
-                  </SelectContent>
-                </Select>
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        
-        <FormField
-          control={form.control}
-          name="patientName"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Patient Name</FormLabel>
-              <FormControl>
-                <Input placeholder="Enter patient name" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        
-        <FormField
-          control={form.control}
-          name="patientId"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Patient ID</FormLabel>
-              <FormControl>
-                <Input placeholder="Enter patient ID" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        
-        {watchAppointmentType === "external" && (
-          <FormField
-            control={form.control}
-            name="hospital"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Hospital</FormLabel>
-                <FormControl>
-                  <Select 
-                    onValueChange={field.onChange}
-                    defaultValue={field.value}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select hospital" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {DUMMY_HOSPITALS.map((hospital) => (
-                        <SelectItem key={hospital} value={hospital}>
-                          {hospital}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        )}
-        
-        <FormField
-          control={form.control}
-          name="clinic"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Clinic</FormLabel>
-              <FormControl>
-                <Select
-                  onValueChange={field.onChange}
-                  defaultValue={field.value}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select clinic" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {DUMMY_CLINICS.map((clinic) => (
-                      <SelectItem key={clinic} value={clinic}>
-                        {clinic}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        
-        <div className="grid grid-cols-2 gap-4">
-          <FormField
-            control={form.control}
-            name="date"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Date</FormLabel>
-                <FormControl>
-                  <Input type="date" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          
-          <FormField
-            control={form.control}
-            name="time"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Time</FormLabel>
-                <FormControl>
-                  <Input type="time" {...field} 
-                    onChange={(e) => {
-                      const timeValue = e.target.value;
-                      if (timeValue) {
-                        const [hours, minutes] = timeValue.split(':');
-                        const hour = parseInt(hours, 10);
-                        const period = hour >= 12 ? 'PM' : 'AM';
-                        const formattedHour = hour % 12 || 12;
-                        field.onChange(`${formattedHour}:${minutes} ${period}`);
-                      }
-                    }}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
-        
-        <FormField
-          control={form.control}
-          name="purpose"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Purpose</FormLabel>
-              <FormControl>
-                <Select
-                  onValueChange={field.onChange}
-                  defaultValue={field.value}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select purpose" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {DUMMY_PURPOSES.map((purpose) => (
-                      <SelectItem key={purpose} value={purpose}>
-                        {purpose}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        
-        <FormField
-          control={form.control}
-          name="notes"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Notes (optional)</FormLabel>
-              <FormControl>
-                <Input placeholder="Additional notes" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        
-        <DialogFooter>
-          <Button type="submit" className="bg-health-600 hover:bg-health-700">
-            Schedule Appointment
-          </Button>
-        </DialogFooter>
-      </form>
-    </Form>
-  );
-};
 
 const AppointmentsTable = ({ 
   appointments, 

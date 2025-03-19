@@ -1,3 +1,4 @@
+
 import { create } from 'zustand';
 import { format } from 'date-fns';
 
@@ -7,7 +8,7 @@ export interface Patient {
   time: string;
   purpose: string;
   status: 'pending' | 'attended';
-  gender: 'male' | 'female';
+  gender: 'male' | 'female' | 'other';
   photoUrl: string;
 }
 
@@ -23,6 +24,16 @@ export interface PatientAppointment {
   nextReviewDate?: string; // Added for next review date
   hospital?: string; // Added hospital field
   clinic?: string; // Added clinic field
+  
+  // Additional patient information
+  gender?: string;
+  phoneNumber?: string;
+  email?: string;
+  address?: string;
+  occupation?: string;
+  hasInsurance?: boolean;
+  insuranceNumber?: string;
+  diagnosis?: string;
 }
 
 interface PatientStore {
