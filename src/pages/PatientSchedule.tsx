@@ -42,7 +42,7 @@ const PatientSchedule = () => {
     
     // Update local state
     const updatedAppointments = appointments.map(appointment => 
-      appointment.id === id ? { ...appointment, status: newStatus } : appointment
+      appointment.id === id ? { ...appointment, status: newStatus as 'pending' | 'attended' } : appointment
     );
     setAppointments(updatedAppointments);
   };
