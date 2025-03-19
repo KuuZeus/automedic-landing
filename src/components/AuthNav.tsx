@@ -24,17 +24,6 @@ const AuthNav = () => {
           </div>
           
           <nav className="flex items-center space-x-1 md:space-x-4">
-            <Link to="/dashboard">
-              <Button 
-                variant={location.pathname === "/dashboard" ? "default" : "ghost"} 
-                size="sm"
-                className={location.pathname === "/dashboard" ? "bg-health-600 hover:bg-health-700" : ""}
-              >
-                <LayoutDashboard className="h-4 w-4 mr-2" />
-                <span className="hidden md:inline">Dashboard</span>
-              </Button>
-            </Link>
-            
             <Link to="/patient-schedule">
               <Button 
                 variant={location.pathname === "/patient-schedule" ? "default" : "ghost"} 
@@ -43,6 +32,17 @@ const AuthNav = () => {
               >
                 <Calendar className="h-4 w-4 mr-2" />
                 <span className="hidden md:inline">Schedule</span>
+              </Button>
+            </Link>
+            
+            <Link to="/dashboard">
+              <Button 
+                variant={location.pathname === "/dashboard" ? "default" : "ghost"} 
+                size="sm"
+                className={location.pathname === "/dashboard" ? "bg-health-600 hover:bg-health-700" : ""}
+              >
+                <LayoutDashboard className="h-4 w-4 mr-2" />
+                <span className="hidden md:inline">Dashboard</span>
               </Button>
             </Link>
             
