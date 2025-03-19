@@ -11,45 +11,69 @@ export type Database = {
     Tables: {
       appointments: {
         Row: {
+          address: string | null
           clinic: string | null
           created_at: string
           date: string
+          diagnosis: string | null
+          email: string | null
+          gender: string | null
+          has_insurance: boolean | null
           hospital: string | null
           id: string
+          insurance_number: string | null
           next_review_date: string | null
           notes: string | null
+          occupation: string | null
           patient_id: string
           patient_name: string
+          phone_number: string | null
           purpose: string
           status: string
           time: string
           updated_at: string
         }
         Insert: {
+          address?: string | null
           clinic?: string | null
           created_at?: string
           date: string
+          diagnosis?: string | null
+          email?: string | null
+          gender?: string | null
+          has_insurance?: boolean | null
           hospital?: string | null
           id?: string
+          insurance_number?: string | null
           next_review_date?: string | null
           notes?: string | null
+          occupation?: string | null
           patient_id: string
           patient_name: string
+          phone_number?: string | null
           purpose: string
           status: string
           time: string
           updated_at?: string
         }
         Update: {
+          address?: string | null
           clinic?: string | null
           created_at?: string
           date?: string
+          diagnosis?: string | null
+          email?: string | null
+          gender?: string | null
+          has_insurance?: boolean | null
           hospital?: string | null
           id?: string
+          insurance_number?: string | null
           next_review_date?: string | null
           notes?: string | null
+          occupation?: string | null
           patient_id?: string
           patient_name?: string
+          phone_number?: string | null
           purpose?: string
           status?: string
           time?: string

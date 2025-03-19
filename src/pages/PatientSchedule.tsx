@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import AuthNav from "@/components/AuthNav";
@@ -420,7 +419,6 @@ const PatientSchedule = () => {
   );
 };
 
-// Dummy data for dropdowns
 const DUMMY_HOSPITALS = [
   "Korle Bu Teaching Hospital",
   "37 Military Hospital",
