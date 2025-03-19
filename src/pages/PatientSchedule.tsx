@@ -496,6 +496,42 @@ const PatientSchedule = () => {
   );
 };
 
+// Dummy data for dropdowns
+const DUMMY_HOSPITALS = [
+  "Korle Bu Teaching Hospital",
+  "37 Military Hospital",
+  "Ridge Hospital",
+  "Tema General Hospital",
+  "University of Ghana Medical Centre",
+  "Greater Accra Regional Hospital",
+];
+
+const DUMMY_CLINICS = [
+  "Hypertension Clinic",
+  "Diabetes Clinic",
+  "Antenatal Clinic",
+  "Postnatal Clinic",
+  "HIV Clinic",
+  "Renal Clinic",
+  "Heart Failure Clinic",
+  "TB Clinic",
+  "Outpatient Clinic",
+  "Pediatric Clinic",
+];
+
+const DUMMY_PURPOSES = [
+  "Initial Consultation",
+  "Follow-up",
+  "Medication Review",
+  "Lab Results",
+  "Surgery Consultation",
+  "Vaccination",
+  "Health Screening",
+  "Wellness Check",
+  "Specialist Referral",
+  "Emergency",
+];
+
 const NewAppointmentForm = ({ 
   onSubmit,
   selectedDate,
@@ -601,7 +637,21 @@ const NewAppointmentForm = ({
               <FormItem>
                 <FormLabel>Hospital</FormLabel>
                 <FormControl>
-                  <Input placeholder="Enter hospital name" {...field} />
+                  <Select 
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select hospital" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {DUMMY_HOSPITALS.map((hospital) => (
+                        <SelectItem key={hospital} value={hospital}>
+                          {hospital}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -616,7 +666,21 @@ const NewAppointmentForm = ({
             <FormItem>
               <FormLabel>Clinic</FormLabel>
               <FormControl>
-                <Input placeholder="Enter clinic name (optional)" {...field} />
+                <Select
+                  onValueChange={field.onChange}
+                  defaultValue={field.value}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select clinic" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {DUMMY_CLINICS.map((clinic) => (
+                      <SelectItem key={clinic} value={clinic}>
+                        {clinic}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -671,7 +735,21 @@ const NewAppointmentForm = ({
             <FormItem>
               <FormLabel>Purpose</FormLabel>
               <FormControl>
-                <Input placeholder="Reason for appointment" {...field} />
+                <Select
+                  onValueChange={field.onChange}
+                  defaultValue={field.value}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select purpose" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {DUMMY_PURPOSES.map((purpose) => (
+                      <SelectItem key={purpose} value={purpose}>
+                        {purpose}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </FormControl>
               <FormMessage />
             </FormItem>
