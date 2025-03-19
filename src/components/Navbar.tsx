@@ -30,11 +30,9 @@ const Navbar: React.FC = () => {
     >
       <div className="container max-w-7xl mx-auto px-4 md:px-6 flex items-center justify-between">
         <Link to="/" className="flex items-center space-x-2">
-          <img 
-            src="/lovable-uploads/df9b6056-a446-4110-afd9-43380f806621.png" 
-            alt="SynchoraHealth Logo" 
-            className="h-16 w-auto" 
-          />
+          <span className="text-2xl font-semibold bg-gradient-to-r from-health-700 to-health-500 bg-clip-text text-transparent">
+            SynchoraHealth
+          </span>
         </Link>
 
         {/* Desktop Navigation */}
