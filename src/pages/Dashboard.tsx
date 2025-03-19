@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import AuthNav from "@/components/AuthNav";
@@ -92,11 +91,10 @@ const Dashboard = () => {
             setRole(profileData.role || "User");
           }
 
-          // Only fetch appointments where this user personally attended
+          // Query appointments - removed the doctor_id filter since that column doesn't exist
           const { data: appointmentsData, error: appointmentsError } = await supabase
             .from('appointments')
-            .select('status, purpose, date')
-            .or(`doctor_id.eq.${user.id}`);
+            .select('status, purpose, date');
 
           if (appointmentsError) throw appointmentsError;
 
