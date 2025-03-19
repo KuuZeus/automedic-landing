@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import AuthNav from "@/components/AuthNav";
@@ -108,6 +109,7 @@ const Dashboard = () => {
               canceled: canceledCount
             });
 
+            // Prepare data for bar chart by purpose
             const purposeGroups = {};
             appointmentsData.forEach(app => {
               purposeGroups[app.purpose] = (purposeGroups[app.purpose] || 0) + 1;
@@ -119,17 +121,36 @@ const Dashboard = () => {
             }));
             setAppointmentsByPurpose(purposeData);
 
+            // Process data for monthly trends with multiple status lines
             const months = {};
             appointmentsData.forEach(app => {
               const date = new Date(app.date);
               const monthYear = `${date.toLocaleString('default', { month: 'short' })}`;
-              months[monthYear] = (months[monthYear] || 0) + 1;
+              
+              if (!months[monthYear]) {
+                months[monthYear] = {
+                  attended: 0,
+                  missed: 0,
+                  canceled: 0
+                };
+              }
+              
+              if (app.status === 'attended') {
+                months[monthYear].attended += 1;
+              } else if (app.status === 'canceled') {
+                months[monthYear].canceled += 1;
+              } else if (app.status === 'pending') {
+                months[monthYear].missed += 1; // Using pending as missed for demonstration
+              }
             });
             
-            const monthData = Object.entries(months).map(([name, count]) => ({
+            const monthData = Object.entries(months).map(([name, stats]) => ({
               name,
-              appointments: count
+              attended: stats.attended,
+              missed: stats.missed,
+              canceled: stats.canceled
             }));
+            
             setAppointmentsByMonth(monthData);
           }
         } catch (error) {
