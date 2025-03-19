@@ -19,7 +19,8 @@ import {
   Activity,
   Clipboard,
   Hospital,
-  UserCircle
+  UserCircle,
+  Mail
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -230,33 +231,51 @@ const Dashboard = () => {
                   </AvatarFallback>
                 </Avatar>
                 {!isEditing ? (
-                  <div className="text-center">
-                    <h3 className="text-xl font-medium">
+                  <div className="w-full">
+                    <h3 className="text-xl font-medium text-center mb-2">
                       {firstName || lastName ? `${firstName} ${lastName}` : user.email}
                     </h3>
-                    <div className="flex items-center justify-center mt-1">
+                    <div className="flex items-center justify-center mt-1 mb-4">
                       <UserCircle className="h-4 w-4 text-health-600 mr-1" />
                       <p className="text-gray-500">{role || "User"}</p>
                     </div>
                     {specialty && (
-                      <div className="flex items-center justify-center mt-1">
+                      <div className="flex items-center justify-center mt-1 mb-4">
                         <Clipboard className="h-4 w-4 text-health-600 mr-1" />
                         <p className="text-gray-500">{specialty}</p>
                       </div>
                     )}
-                    {clinic && (
-                      <div className="flex items-center justify-center mt-1">
-                        <Hospital className="h-4 w-4 text-health-600 mr-1" />
-                        <p className="text-gray-500">Clinic: {clinic}</p>
+                    
+                    {/* Left-aligned details with titles */}
+                    <div className="space-y-2 text-left">
+                      <div className="flex items-center">
+                        <Mail className="h-4 w-4 text-health-600 mr-2" />
+                        <div>
+                          <span className="font-medium text-sm text-gray-700">Email: </span>
+                          <span className="text-gray-600">{user.email}</span>
+                        </div>
                       </div>
-                    )}
-                    {hospital && (
-                      <div className="flex items-center justify-center mt-1">
-                        <Hospital className="h-4 w-4 text-health-600 mr-1" />
-                        <p className="text-gray-500">Hospital: {hospital}</p>
-                      </div>
-                    )}
-                    <p className="text-gray-500 text-sm mt-2">{user.email}</p>
+                      
+                      {clinic && (
+                        <div className="flex items-center">
+                          <Hospital className="h-4 w-4 text-health-600 mr-2" />
+                          <div>
+                            <span className="font-medium text-sm text-gray-700">Clinic: </span>
+                            <span className="text-gray-600">{clinic}</span>
+                          </div>
+                        </div>
+                      )}
+                      
+                      {hospital && (
+                        <div className="flex items-center">
+                          <Hospital className="h-4 w-4 text-health-600 mr-2" />
+                          <div>
+                            <span className="font-medium text-sm text-gray-700">Hospital: </span>
+                            <span className="text-gray-600">{hospital}</span>
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 ) : (
                   <div className="w-full space-y-4">
@@ -293,7 +312,7 @@ const Dashboard = () => {
                       />
                     </div>
                     <div>
-                      <Label htmlFor="clinic">Clinic/Hospital</Label>
+                      <Label htmlFor="clinic">Clinic</Label>
                       <Input 
                         id="clinic" 
                         value={clinic} 
