@@ -42,6 +42,13 @@ import {
 } from "recharts";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 
+// Define an interface for monthly stats to fix TypeScript errors
+interface MonthlyStats {
+  attended: number;
+  missed: number;
+  canceled: number;
+}
+
 const Dashboard = () => {
   const { user, loading } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
@@ -110,7 +117,7 @@ const Dashboard = () => {
             });
 
             // Prepare data for bar chart by purpose
-            const purposeGroups = {};
+            const purposeGroups: Record<string, number> = {};
             appointmentsData.forEach(app => {
               purposeGroups[app.purpose] = (purposeGroups[app.purpose] || 0) + 1;
             });
@@ -122,7 +129,7 @@ const Dashboard = () => {
             setAppointmentsByPurpose(purposeData);
 
             // Process data for monthly trends with multiple status lines
-            const months = {};
+            const months: Record<string, MonthlyStats> = {};
             appointmentsData.forEach(app => {
               const date = new Date(app.date);
               const monthYear = `${date.toLocaleString('default', { month: 'short' })}`;
