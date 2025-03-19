@@ -323,427 +323,358 @@ const NewAppointment = () => {
   
   if (!user) return null;
 
-  const renderStepContent = () => {
-    switch (appointmentStep) {
-      case 'selection':
-        return (
-          <div className="space-y-6">
-            <div className="space-y-4">
-              <h2 className="text-lg font-semibold border-b pb-2">Select Hospital and Clinic</h2>
-              <p className="text-gray-600">Please select the hospital and clinic you want to book an appointment with.</p>
+  const renderSelectionStep = () => {
+    return (
+      <div className="space-y-6">
+        <div className="space-y-4">
+          <h2 className="text-lg font-semibold border-b pb-2">Select Hospital and Clinic</h2>
+          <p className="text-gray-600">Please select the hospital and clinic you want to book an appointment with.</p>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700">Hospital</label>
+              <select 
+                className="w-full border-gray-300 rounded-md shadow-sm focus:border-health-500 focus:ring-health-500"
+                value={form.getValues('hospital')}
+                onChange={(e) => form.setValue('hospital', e.target.value)}
+              >
+                <option value="">Select hospital</option>
+                {DUMMY_HOSPITALS.map((hospital) => (
+                  <option key={hospital} value={hospital}>{hospital}</option>
+                ))}
+              </select>
+              {form.formState.errors.hospital && (
+                <p className="text-sm text-red-500">{form.formState.errors.hospital.message}</p>
+              )}
+            </div>
+            
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700">Clinic</label>
+              <select 
+                className="w-full border-gray-300 rounded-md shadow-sm focus:border-health-500 focus:ring-health-500"
+                value={form.getValues('clinic')}
+                onChange={(e) => form.setValue('clinic', e.target.value)}
+                disabled={!selectedHospital}
+              >
+                <option value="">{selectedHospital ? "Select clinic" : "Select hospital first"}</option>
+                {DUMMY_CLINICS.map((clinic) => (
+                  <option key={clinic} value={clinic}>{clinic}</option>
+                ))}
+              </select>
+              {form.formState.errors.clinic && (
+                <p className="text-sm text-red-500">{form.formState.errors.clinic.message}</p>
+              )}
+            </div>
+          </div>
+        </div>
+        
+        <div className="flex justify-end">
+          <Button
+            type="button"
+            className="bg-health-600 hover:bg-health-700"
+            onClick={handleSelectionComplete}
+            disabled={!selectedHospital || !selectedClinic}
+          >
+            Continue to Schedule
+          </Button>
+        </div>
+      </div>
+    );
+  };
+
+  const renderSchedulingStep = () => {
+    return (
+      <div className="space-y-6">
+        <div className="space-y-4">
+          <h2 className="text-lg font-semibold border-b pb-2">Schedule Your Appointment</h2>
+          <p className="text-gray-600">
+            Please select an available time slot for your appointment at {selectedHospital} - {selectedClinic}.
+          </p>
+          
+          {/* Mock Calendly Interface */}
+          <div className="border rounded-lg p-6 bg-gray-50">
+            <div className="text-center">
+              <h3 className="font-medium text-lg mb-4">Available Appointment Slots</h3>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="hospital"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Hospital</FormLabel>
-                      <Select 
-                        onValueChange={field.onChange} 
-                        defaultValue={field.value}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select hospital" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {DUMMY_HOSPITALS.map((hospital) => (
-                            <SelectItem key={hospital} value={hospital}>
-                              {hospital}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
+              {/* This would be replaced with actual Calendly embed in production */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 mt-4">
+                {['9:00 AM', '10:30 AM', '11:45 AM', '1:15 PM', '2:30 PM', '4:00 PM'].map((time) => (
+                  <Button 
+                    key={time} 
+                    variant="outline" 
+                    className="justify-center"
+                    onClick={simulateCalendlySelection}
+                  >
+                    Today at {time}
+                  </Button>
+                ))}
+              </div>
+              
+              <div className="mt-6">
+                <p className="text-sm text-gray-500 mb-2">
+                  Note: In a real implementation, this would be replaced with the Calendly scheduling widget
+                  specific to the selected hospital and clinic.
+                </p>
+                <Button
+                  variant="outline"
+                  className="mt-2"
+                  onClick={() => setAppointmentStep('selection')}
+                >
+                  Go Back to Selection
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const renderFormStep = () => {
+    return (
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Appointment Confirmation */}
+          <div className="space-y-4 md:col-span-2">
+            <h2 className="text-lg font-semibold border-b pb-2">Appointment Details</h2>
+            <div className="bg-blue-50 p-4 rounded-lg flex items-center gap-3">
+              <CalendarIcon className="h-5 w-5 text-blue-500" />
+              <div>
+                <p className="font-medium">Your appointment is scheduled for:</p>
+                <p className="text-gray-700">
+                  {selectedDateTime.date ? format(selectedDateTime.date, 'EEEE, MMMM d, yyyy') : ''} at {selectedDateTime.time}
+                </p>
+                <p className="text-gray-700">
+                  {selectedHospital} - {selectedClinic}
+                </p>
+              </div>
+            </div>
+          </div>
+          
+          {/* Patient Basic Information */}
+          <div className="space-y-4 md:col-span-2">
+            <h2 className="text-lg font-semibold border-b pb-2">Patient Information</h2>
+            
+            {/* Name fields */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700">First Name</label>
+                <input
+                  type="text"
+                  className="w-full border-gray-300 rounded-md shadow-sm focus:border-health-500 focus:ring-health-500"
+                  placeholder="Enter first name"
+                  {...form.register("firstName")}
                 />
-                
-                <FormField
-                  control={form.control}
-                  name="clinic"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Clinic</FormLabel>
-                      <Select 
-                        onValueChange={field.onChange} 
-                        defaultValue={field.value}
-                        disabled={!selectedHospital}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder={selectedHospital ? "Select clinic" : "Select hospital first"} />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {DUMMY_CLINICS.map((clinic) => (
-                            <SelectItem key={clinic} value={clinic}>
-                              {clinic}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
+                {form.formState.errors.firstName && (
+                  <p className="text-sm text-red-500">{form.formState.errors.firstName.message}</p>
+                )}
+              </div>
+              
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700">Middle Name (Optional)</label>
+                <input
+                  type="text"
+                  className="w-full border-gray-300 rounded-md shadow-sm focus:border-health-500 focus:ring-health-500"
+                  placeholder="Enter middle name"
+                  {...form.register("middleName")}
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700">Last Name</label>
+                <input
+                  type="text"
+                  className="w-full border-gray-300 rounded-md shadow-sm focus:border-health-500 focus:ring-health-500"
+                  placeholder="Enter last name"
+                  {...form.register("lastName")}
+                />
+                {form.formState.errors.lastName && (
+                  <p className="text-sm text-red-500">{form.formState.errors.lastName.message}</p>
+                )}
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700">Gender</label>
+                <select
+                  className="w-full border-gray-300 rounded-md shadow-sm focus:border-health-500 focus:ring-health-500"
+                  {...form.register("gender")}
+                >
+                  <option value="">Select gender</option>
+                  <option value="male">Male</option>
+                  <option value="female">Female</option>
+                  <option value="other">Other</option>
+                </select>
+                {form.formState.errors.gender && (
+                  <p className="text-sm text-red-500">{form.formState.errors.gender.message}</p>
+                )}
+              </div>
+              
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700">Phone Number</label>
+                <input
+                  type="text"
+                  className="w-full border-gray-300 rounded-md shadow-sm focus:border-health-500 focus:ring-health-500"
+                  placeholder="Enter phone number"
+                  {...form.register("phoneNumber")}
+                />
+                {form.formState.errors.phoneNumber && (
+                  <p className="text-sm text-red-500">{form.formState.errors.phoneNumber.message}</p>
+                )}
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700">Email (Optional)</label>
+                <input
+                  type="email"
+                  className="w-full border-gray-300 rounded-md shadow-sm focus:border-health-500 focus:ring-health-500"
+                  placeholder="Enter email"
+                  {...form.register("email")}
+                />
+                {form.formState.errors.email && (
+                  <p className="text-sm text-red-500">{form.formState.errors.email.message}</p>
+                )}
+              </div>
+              
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700">Occupation (Optional)</label>
+                <input
+                  type="text"
+                  className="w-full border-gray-300 rounded-md shadow-sm focus:border-health-500 focus:ring-health-500"
+                  placeholder="Enter occupation"
+                  {...form.register("occupation")}
                 />
               </div>
             </div>
             
-            <div className="flex justify-end">
-              <Button
-                type="button"
-                className="bg-health-600 hover:bg-health-700"
-                onClick={handleSelectionComplete}
-                disabled={!selectedHospital || !selectedClinic}
-              >
-                Continue to Schedule
-              </Button>
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700">Address</label>
+              <input
+                type="text"
+                className="w-full border-gray-300 rounded-md shadow-sm focus:border-health-500 focus:ring-health-500"
+                placeholder="Enter address"
+                {...form.register("address")}
+              />
+              {form.formState.errors.address && (
+                <p className="text-sm text-red-500">{form.formState.errors.address.message}</p>
+              )}
             </div>
-          </div>
-        );
-        
-      case 'scheduling':
-        return (
-          <div className="space-y-6">
-            <div className="space-y-4">
-              <h2 className="text-lg font-semibold border-b pb-2">Schedule Your Appointment</h2>
-              <p className="text-gray-600">
-                Please select an available time slot for your appointment at {selectedHospital} - {selectedClinic}.
-              </p>
-              
-              {/* Mock Calendly Interface */}
-              <div className="border rounded-lg p-6 bg-gray-50">
-                <div className="text-center">
-                  <h3 className="font-medium text-lg mb-4">Available Appointment Slots</h3>
-                  
-                  {/* This would be replaced with actual Calendly embed in production */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 mt-4">
-                    {['9:00 AM', '10:30 AM', '11:45 AM', '1:15 PM', '2:30 PM', '4:00 PM'].map((time) => (
-                      <Button 
-                        key={time} 
-                        variant="outline" 
-                        className="justify-center"
-                        onClick={simulateCalendlySelection}
-                      >
-                        Today at {time}
-                      </Button>
-                    ))}
-                  </div>
-                  
-                  <div className="mt-6">
-                    <p className="text-sm text-gray-500 mb-2">
-                      Note: In a real implementation, this would be replaced with the Calendly scheduling widget
-                      specific to the selected hospital and clinic.
-                    </p>
-                    <Button
-                      variant="outline"
-                      className="mt-2"
-                      onClick={() => setAppointmentStep('selection')}
-                    >
-                      Go Back to Selection
-                    </Button>
-                  </div>
-                </div>
-              </div>
+            
+            {/* Diagnosis field */}
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700">Diagnosis</label>
+              <textarea
+                className="w-full border-gray-300 rounded-md shadow-sm focus:border-health-500 focus:ring-health-500"
+                placeholder="Enter diagnosis or condition" 
+                rows={3}
+                {...form.register("diagnosis")}
+              />
+              {form.formState.errors.diagnosis && (
+                <p className="text-sm text-red-500">{form.formState.errors.diagnosis.message}</p>
+              )}
             </div>
-          </div>
-        );
-        
-      case 'form':
-        return (
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Appointment Confirmation */}
-                <div className="space-y-4 md:col-span-2">
-                  <h2 className="text-lg font-semibold border-b pb-2">Appointment Details</h2>
-                  <div className="bg-blue-50 p-4 rounded-lg flex items-center gap-3">
-                    <CalendarIcon className="h-5 w-5 text-blue-500" />
-                    <div>
-                      <p className="font-medium">Your appointment is scheduled for:</p>
-                      <p className="text-gray-700">
-                        {selectedDateTime.date ? format(selectedDateTime.date, 'EEEE, MMMM d, yyyy') : ''} at {selectedDateTime.time}
-                      </p>
-                      <p className="text-gray-700">
-                        {selectedHospital} - {selectedClinic}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-                
-                {/* Patient Basic Information */}
-                <div className="space-y-4 md:col-span-2">
-                  <h2 className="text-lg font-semibold border-b pb-2">Patient Information</h2>
-                  
-                  {/* Name fields */}
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="firstName"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>First Name</FormLabel>
-                          <FormControl>
-                            <Input placeholder="Enter first name" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    
-                    <FormField
-                      control={form.control}
-                      name="middleName"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Middle Name (Optional)</FormLabel>
-                          <FormControl>
-                            <Input placeholder="Enter middle name" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    
-                    <FormField
-                      control={form.control}
-                      name="lastName"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Last Name</FormLabel>
-                          <FormControl>
-                            <Input placeholder="Enter last name" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="gender"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Gender</FormLabel>
-                          <Select 
-                            onValueChange={field.onChange} 
-                            defaultValue={field.value}
-                          >
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select gender" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value="male">Male</SelectItem>
-                              <SelectItem value="female">Female</SelectItem>
-                              <SelectItem value="other">Other</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    
-                    <FormField
-                      control={form.control}
-                      name="phoneNumber"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Phone Number</FormLabel>
-                          <FormControl>
-                            <Input placeholder="Enter phone number" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="email"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Email (Optional)</FormLabel>
-                          <FormControl>
-                            <Input placeholder="Enter email" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    
-                    <FormField
-                      control={form.control}
-                      name="occupation"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Occupation (Optional)</FormLabel>
-                          <FormControl>
-                            <Input placeholder="Enter occupation" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                  
-                  <FormField
-                    control={form.control}
-                    name="address"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Address</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Enter address" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  {/* Moved diagnosis field to patient information section */}
-                  <FormField
-                    control={form.control}
-                    name="diagnosis"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Diagnosis</FormLabel>
-                        <FormControl>
-                          <Textarea 
-                            placeholder="Enter diagnosis or condition" 
-                            className="resize-none"
-                            {...field} 
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <div className="space-y-2">
-                    <FormField
-                      control={form.control}
-                      name="hasInsurance"
-                      render={({ field }) => (
-                        <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
-                          <FormControl>
-                            <Checkbox
-                              checked={field.value}
-                              onCheckedChange={field.onChange}
-                            />
-                          </FormControl>
-                          <div className="space-y-1 leading-none">
-                            <FormLabel>Has National Health Insurance</FormLabel>
-                          </div>
-                        </FormItem>
-                      )}
-                    />
-                    
-                    {form.watch("hasInsurance") && (
-                      <FormField
-                        control={form.control}
-                        name="insuranceNumber"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Insurance Number</FormLabel>
-                            <FormControl>
-                              <Input placeholder="Enter insurance number" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    )}
-                  </div>
-                </div>
-                
-                {/* Purpose and Notes */}
-                <div className="space-y-4 md:col-span-2">
-                  <h2 className="text-lg font-semibold border-b pb-2">Additional Information</h2>
-                  
-                  <FormField
-                    control={form.control}
-                    name="purpose"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Purpose</FormLabel>
-                        <Select 
-                          onValueChange={field.onChange} 
-                          defaultValue={field.value}
-                        >
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select purpose" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {DUMMY_PURPOSES.map((purpose) => (
-                              <SelectItem key={purpose} value={purpose}>
-                                {purpose}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={form.control}
-                    name="notes"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Additional Notes (Optional)</FormLabel>
-                        <FormControl>
-                          <Textarea 
-                            placeholder="Enter additional notes" 
-                            className="resize-none"
-                            {...field} 
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+            
+            <div className="space-y-2">
+              <div className="flex items-start space-x-3 border rounded-md p-4">
+                <input
+                  type="checkbox"
+                  id="hasInsurance"
+                  className="h-4 w-4 mt-1 text-health-600 focus:ring-health-500"
+                  {...form.register("hasInsurance")}
+                />
+                <div>
+                  <label htmlFor="hasInsurance" className="font-medium">Has National Health Insurance</label>
                 </div>
               </div>
               
-              <div className="flex justify-end gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setAppointmentStep('scheduling')}
-                >
-                  Back to Scheduling
-                </Button>
-                <Button
-                  type="submit"
-                  className="bg-health-600 hover:bg-health-700"
-                  disabled={submitting}
-                >
-                  {submitting ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Creating...
-                    </>
-                  ) : (
-                    "Create Appointment"
+              {form.watch("hasInsurance") && (
+                <div className="mt-2">
+                  <label className="block text-sm font-medium text-gray-700">Insurance Number</label>
+                  <input
+                    type="text"
+                    className="w-full border-gray-300 rounded-md shadow-sm focus:border-health-500 focus:ring-health-500"
+                    placeholder="Enter insurance number"
+                    {...form.register("insuranceNumber")}
+                  />
+                  {form.formState.errors.insuranceNumber && (
+                    <p className="text-sm text-red-500">{form.formState.errors.insuranceNumber.message}</p>
                   )}
-                </Button>
-              </div>
-            </form>
-          </Form>
-        );
-      
+                </div>
+              )}
+            </div>
+          </div>
+          
+          {/* Purpose and Notes */}
+          <div className="space-y-4 md:col-span-2">
+            <h2 className="text-lg font-semibold border-b pb-2">Additional Information</h2>
+            
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700">Purpose</label>
+              <select
+                className="w-full border-gray-300 rounded-md shadow-sm focus:border-health-500 focus:ring-health-500"
+                {...form.register("purpose")}
+              >
+                <option value="">Select purpose</option>
+                {DUMMY_PURPOSES.map((purpose) => (
+                  <option key={purpose} value={purpose}>{purpose}</option>
+                ))}
+              </select>
+              {form.formState.errors.purpose && (
+                <p className="text-sm text-red-500">{form.formState.errors.purpose.message}</p>
+              )}
+            </div>
+            
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700">Additional Notes (Optional)</label>
+              <textarea
+                className="w-full border-gray-300 rounded-md shadow-sm focus:border-health-500 focus:ring-health-500"
+                placeholder="Enter additional notes" 
+                rows={3}
+                {...form.register("notes")}
+              />
+            </div>
+          </div>
+        </div>
+        
+        <div className="flex justify-end gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => setAppointmentStep('scheduling')}
+          >
+            Back to Scheduling
+          </Button>
+          <Button
+            type="submit"
+            className="bg-health-600 hover:bg-health-700"
+            disabled={submitting}
+          >
+            {submitting ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Creating...
+              </>
+            ) : (
+              "Create Appointment"
+            )}
+          </Button>
+        </div>
+      </form>
+    );
+  };
+
+  // Function to render appropriate step content
+  const renderStepContent = () => {
+    switch (appointmentStep) {
+      case 'selection':
+        return renderSelectionStep();
+      case 'scheduling':
+        return renderSchedulingStep();
+      case 'form':
+        return renderFormStep();
       default:
         return null;
     }
