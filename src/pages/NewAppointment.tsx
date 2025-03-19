@@ -383,6 +383,25 @@ const NewAppointment = () => {
                     )}
                   />
                   
+                  {/* Moved diagnosis field to patient information section */}
+                  <FormField
+                    control={form.control}
+                    name="diagnosis"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Diagnosis</FormLabel>
+                        <FormControl>
+                          <Textarea 
+                            placeholder="Enter diagnosis or condition" 
+                            className="resize-none"
+                            {...field} 
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
                   <div className="space-y-2">
                     <FormField
                       control={form.control}
@@ -561,24 +580,6 @@ const NewAppointment = () => {
                             ))}
                           </SelectContent>
                         </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={form.control}
-                    name="diagnosis"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Diagnosis</FormLabel>
-                        <FormControl>
-                          <Textarea 
-                            placeholder="Enter diagnosis or condition" 
-                            className="resize-none"
-                            {...field} 
-                          />
-                        </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
