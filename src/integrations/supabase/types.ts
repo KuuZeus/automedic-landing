@@ -81,6 +81,48 @@ export type Database = {
         }
         Relationships: []
       }
+      contact_submissions: {
+        Row: {
+          contact_name: string
+          created_at: string
+          email: string
+          facility_name: string
+          facility_size: string
+          facility_type: string
+          id: string
+          location: string
+          message: string | null
+          phone: string
+          processed: boolean
+        }
+        Insert: {
+          contact_name: string
+          created_at?: string
+          email: string
+          facility_name: string
+          facility_size: string
+          facility_type: string
+          id?: string
+          location: string
+          message?: string | null
+          phone: string
+          processed?: boolean
+        }
+        Update: {
+          contact_name?: string
+          created_at?: string
+          email?: string
+          facility_name?: string
+          facility_size?: string
+          facility_type?: string
+          id?: string
+          location?: string
+          message?: string | null
+          phone?: string
+          processed?: boolean
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           clinic: string | null

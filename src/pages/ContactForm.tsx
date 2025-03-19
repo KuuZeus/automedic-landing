@@ -17,6 +17,7 @@ import { Textarea } from "@/components/ui/textarea";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 const formSchema = z.object({
   facilityName: z.string().min(1, { message: "Facility name is required" }),
@@ -51,18 +52,43 @@ const ContactForm = () => {
   const onSubmit = async (data: FormValues) => {
     setIsSubmitting(true);
     try {
-      // In a real application, this would send the data to a server
-      // For now, we'll simulate a submission with a timeout
       console.log("Form submitted with data:", data);
       
-      // Simulate sending an email
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      // Save to Supabase
+      const { error: dbError } = await supabase
+        .from('contact_submissions')
+        .insert({
+          facility_name: data.facilityName,
+          contact_name: data.contactName,
+          email: data.email,
+          phone: data.phone,
+          facility_type: data.facilityType,
+          facility_size: data.facilitySize,
+          location: data.location,
+          message: data.message || null
+        });
       
-      toast.success("Thank you for your interest! We'll contact you shortly.");
+      if (dbError) {
+        throw new Error(`Database error: ${dbError.message}`);
+      }
+      
+      // Send email via Edge Function
+      const { error: emailError } = await supabase.functions.invoke('send-contact-email', {
+        body: data
+      });
+      
+      if (emailError) {
+        console.error("Email error:", emailError);
+        // We still consider the form submission successful if only the email fails
+        toast.warning("Your request was saved but there was an issue sending the email notification.");
+      } else {
+        toast.success("Thank you for your interest! We'll contact you shortly.");
+      }
+      
       form.reset();
-    } catch (error) {
+    } catch (error: any) {
       console.error("Submission error:", error);
-      toast.error("Something went wrong. Please try again.");
+      toast.error("Something went wrong. Please try again later.");
     } finally {
       setIsSubmitting(false);
     }
