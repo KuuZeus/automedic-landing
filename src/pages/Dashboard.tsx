@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import AuthNav from "@/components/AuthNav";
@@ -5,7 +6,6 @@ import Footer from "@/components/Footer";
 import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -17,7 +17,8 @@ import {
   Edit2,
   Hospital,
   UserCircle,
-  Mail
+  Mail,
+  ClipboardList
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -36,7 +37,6 @@ import {
   LineChart,
   Line
 } from "recharts";
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 
 interface MonthlyStats {
   attended: number;
@@ -257,7 +257,7 @@ const Dashboard = () => {
                     </div>
                     {specialty && (
                       <div className="flex items-center justify-center mt-1 mb-4">
-                        <Clipboard className="h-4 w-4 text-health-600 mr-1" />
+                        <ClipboardList className="h-4 w-4 text-health-600 mr-1" />
                         <p className="text-gray-500">{specialty}</p>
                       </div>
                     )}
