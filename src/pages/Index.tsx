@@ -1,45 +1,33 @@
 
-import React, { useEffect } from "react";
-import Navbar from "../components/Navbar";
-import Hero from "../components/Hero";
-import Features from "../components/Features";
-import Benefits from "../components/Benefits";
-import CallToAction from "../components/CallToAction";
-import Footer from "../components/Footer";
+import React from "react";
+import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
+import Hero from "@/components/Hero";
+import Features from "@/components/Features";
+import Benefits from "@/components/Benefits";
+import CallToAction from "@/components/CallToAction";
+import { Button } from "@/components/ui/button";
+import { Link } from "react-router-dom";
 
 const Index = () => {
-  useEffect(() => {
-    // Animate elements on scroll
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            entry.target.classList.add("revealed");
-          }
-        });
-      },
-      {
-        root: null,
-        rootMargin: "0px",
-        threshold: 0.1,
-      }
-    );
-
-    const revealElements = document.querySelectorAll(".reveal-on-scroll");
-    revealElements.forEach((el) => observer.observe(el));
-
-    return () => {
-      revealElements.forEach((el) => observer.unobserve(el));
-    };
-  }, []);
-
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen flex flex-col">
       <Navbar />
-      <main>
+      <main className="flex-grow">
         <Hero />
         <Features />
         <Benefits />
+        <div className="max-w-7xl mx-auto px-4 py-12 text-center">
+          <h2 className="text-3xl font-bold text-gray-900 mb-6">Start Managing Appointments Today</h2>
+          <div className="flex justify-center gap-4">
+            <Button className="bg-health-600 hover:bg-health-700" asChild>
+              <Link to="/sign-up">Sign Up Now</Link>
+            </Button>
+            <Button className="bg-health-600 hover:bg-health-700" asChild>
+              <Link to="/new-appointment">New Appointment</Link>
+            </Button>
+          </div>
+        </div>
         <CallToAction />
       </main>
       <Footer />
