@@ -42,7 +42,6 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 
-// Define type for the database appointment that matches Supabase table structure
 interface DbAppointment {
   id: string;
   patient_id: string;
@@ -59,13 +58,11 @@ interface DbAppointment {
   clinic?: string;
 }
 
-// Interface for profile data
 interface ProfileData {
   hospital: string | null;
   clinic: string | null;
 }
 
-// Define schema for the new appointment form
 const appointmentFormSchema = z.object({
   patientName: z.string().min(2, { message: "Patient name is required" }),
   patientId: z.string().min(2, { message: "Patient ID is required" }),
@@ -189,6 +186,44 @@ const PatientSchedule = () => {
       console.error('Error fetching appointments:', error);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const addAppointment = async (data: z.infer<typeof appointmentFormSchema>) => {
+    try {
+      if (!user) {
+        toast.error("You must be logged in to create an appointment");
+        return;
+      }
+
+      const appointmentData = {
+        patient_id: data.patientId,
+        patient_name: data.patientName,
+        date: data.date,
+        time: data.time,
+        purpose: data.purpose,
+        notes: data.notes || null,
+        status: 'pending',
+        hospital: profile.hospital,
+        clinic: profile.clinic
+      };
+
+      const { data: newAppointment, error } = await supabase
+        .from('appointments')
+        .insert(appointmentData)
+        .select('*')
+        .single();
+
+      if (error) {
+        throw error;
+      }
+
+      toast.success("Appointment created successfully");
+      setIsNewAppointmentOpen(false);
+      fetchAppointments(selectedDate);
+    } catch (error: any) {
+      toast.error(`Error creating appointment: ${error.message}`);
+      console.error('Error creating appointment:', error);
     }
   };
 
