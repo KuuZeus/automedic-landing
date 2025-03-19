@@ -150,10 +150,19 @@ const Dashboard = () => {
     if (!user) return;
     
     try {
+      console.log("Updating profile with data:", {
+        id: user.id,
+        first_name: firstName,
+        last_name: lastName,
+        specialty: specialty,
+        clinic: clinic,
+        hospital: hospital,
+        role: role
+      });
+
       const { error } = await supabase
         .from('profiles')
-        .upsert({
-          id: user.id,
+        .update({
           first_name: firstName,
           last_name: lastName,
           specialty: specialty,
@@ -161,7 +170,8 @@ const Dashboard = () => {
           hospital: hospital,
           role: role,
           updated_at: new Date().toISOString()
-        });
+        })
+        .eq('id', user.id);
 
       if (error) throw error;
       
