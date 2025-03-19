@@ -1,55 +1,67 @@
 
 import React from "react";
 import { Link } from "react-router-dom";
+import { ArrowRight } from "lucide-react";
+import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 
 const Platform = () => {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white flex flex-col justify-center items-center p-4">
-      <div className="max-w-md w-full mx-auto bg-white p-8 rounded-2xl shadow-xl">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-health-700 to-health-500 bg-clip-text text-transparent mb-2">
-            SynchoraHealth Platform
-          </h1>
-          <p className="text-gray-600">
-            Access your healthcare scheduling tools
-          </p>
-        </div>
-        
-        <div className="space-y-4">
-          <Link to="/sign-in" className="block w-full">
-            <Button className="w-full py-6 bg-health-600 hover:bg-health-700">
-              Sign In
-            </Button>
-          </Link>
-          
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <span className="w-full border-t border-gray-300" />
-            </div>
-            <div className="relative flex justify-center text-sm">
-              <span className="px-2 bg-white text-gray-500">
-                Don't have an account?
-              </span>
-            </div>
+    <div className="min-h-screen flex flex-col">
+      <Navbar />
+      <main className="flex-grow bg-gray-50 pt-24 pb-16">
+        <div className="container mx-auto px-4 py-12 max-w-6xl">
+          <div className="text-center mb-12">
+            <h1 className="text-4xl font-bold mb-4 bg-gradient-to-r from-health-700 to-health-500 bg-clip-text text-transparent">
+              Welcome to SynchoraHealth Platform
+            </h1>
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+              Schedule appointments, manage patients, and streamline your healthcare practice.
+            </p>
           </div>
-          
-          <Link to="/sign-up" className="block w-full">
-            <Button 
-              variant="outline" 
-              className="w-full py-6 border-health-200 text-health-700 hover:bg-health-50"
-            >
-              Create Account
-            </Button>
-          </Link>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+            <Card className="shadow-md hover:shadow-lg transition-shadow">
+              <CardHeader>
+                <CardTitle>Sign In</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-gray-600">
+                  Already have an account? Sign in to access your dashboard, manage appointments and view patient records.
+                </p>
+              </CardContent>
+              <CardFooter>
+                <Link to="/sign-in" className="w-full">
+                  <Button className="w-full bg-health-600 hover:bg-health-700">
+                    Sign In <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                </Link>
+              </CardFooter>
+            </Card>
+
+            <Card className="shadow-md hover:shadow-lg transition-shadow">
+              <CardHeader>
+                <CardTitle>Create Account</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-gray-600">
+                  New to SynchoraHealth? Create an account to start managing your healthcare practice efficiently.
+                </p>
+              </CardContent>
+              <CardFooter>
+                <Link to="/sign-up" className="w-full">
+                  <Button className="w-full bg-health-600 hover:bg-health-700">
+                    Sign Up <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                </Link>
+              </CardFooter>
+            </Card>
+          </div>
         </div>
-        
-        <div className="mt-8 text-center text-sm text-gray-500">
-          <Link to="/" className="text-health-600 hover:text-health-700 font-medium">
-            Return to Homepage
-          </Link>
-        </div>
-      </div>
+      </main>
+      <Footer />
     </div>
   );
 };
