@@ -1,4 +1,5 @@
 import React from "react";
+import { Activity } from "lucide-react";
 
 const Footer: React.FC = () => {
   return (
@@ -6,7 +7,8 @@ const Footer: React.FC = () => {
       <div className="container max-w-7xl mx-auto px-4 md:px-6">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-10">
           <div className="col-span-1 md:col-span-1">
-            <a href="/" className="inline-block mb-6">
+            <a href="/" className="inline-block mb-6 flex items-center space-x-2">
+              <Activity className="h-5 w-5 text-health-600" strokeWidth={2.5} />
               <span className="text-2xl font-semibold bg-gradient-to-r from-health-700 to-health-500 bg-clip-text text-transparent">
                 SynchoraHealth
               </span>

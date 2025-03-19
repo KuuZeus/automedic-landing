@@ -3,7 +3,7 @@ import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
-import { Calendar, LayoutDashboard, LogOut } from "lucide-react";
+import { Calendar, LayoutDashboard, LogOut, Activity } from "lucide-react";
 
 const AuthNav = () => {
   const { signOut, user } = useAuth();
@@ -16,7 +16,8 @@ const AuthNav = () => {
       <div className="container mx-auto px-4 max-w-7xl">
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center">
-            <Link to="/patient-schedule" className="flex items-center">
+            <Link to="/patient-schedule" className="flex items-center space-x-2">
+              <Activity className="h-6 w-6 text-health-600" strokeWidth={2.5} />
               <span className="text-2xl font-semibold bg-gradient-to-r from-health-700 to-health-500 bg-clip-text text-transparent">
                 SynchoraHealth
               </span>
