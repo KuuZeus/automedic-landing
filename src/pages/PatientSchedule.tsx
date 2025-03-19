@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import AuthNav from "@/components/AuthNav";
@@ -14,7 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
-// Define type for the database appointment
+// Define type for the database appointment that matches the actual return from Supabase
 interface DbAppointment {
   id: string;
   patient_id: string;
@@ -22,8 +21,10 @@ interface DbAppointment {
   date: string;
   time: string;
   purpose: string;
-  status: 'pending' | 'attended';
+  status: string; // Changed from 'pending' | 'attended' to string to match Supabase
   notes?: string;
+  created_at: string;
+  updated_at: string;
 }
 
 const PatientSchedule = () => {
@@ -64,7 +65,9 @@ const PatientSchedule = () => {
           date: appointment.date,
           time: appointment.time,
           purpose: appointment.purpose,
-          status: appointment.status,
+          // Cast the status to either 'pending' or 'attended'
+          // If it's not one of these values, default to 'pending'
+          status: appointment.status === 'attended' ? 'attended' : 'pending',
           notes: appointment.notes,
           patientName: appointment.patient_name
         }));
