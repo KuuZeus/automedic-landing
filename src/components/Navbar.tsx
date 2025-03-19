@@ -40,6 +40,12 @@ const Navbar: React.FC = () => {
 
         {/* Desktop Navigation */}
         <nav className="hidden md:flex items-center space-x-8">
+          <Link
+            to="/platform"
+            className="text-sm font-medium text-gray-700 hover:text-health-600 transition-colors"
+          >
+            Platform
+          </Link>
           <a
             href="#features"
             className="text-sm font-medium text-gray-700 hover:text-health-600 transition-colors"
@@ -79,6 +85,13 @@ const Navbar: React.FC = () => {
       {/* Mobile Navigation */}
       {mobileMenuOpen && (
         <nav className="md:hidden bg-white absolute top-full left-0 right-0 p-4 shadow-md flex flex-col space-y-4 animate-fade-in">
+          <Link
+            to="/platform"
+            className="text-gray-700 hover:text-health-600 transition-colors py-2 px-4"
+            onClick={() => setMobileMenuOpen(false)}
+          >
+            Platform
+          </Link>
           <a
             href="#features"
             className="text-gray-700 hover:text-health-600 transition-colors py-2 px-4"
