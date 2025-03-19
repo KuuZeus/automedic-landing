@@ -12,7 +12,7 @@ import { Label } from "@/components/ui/label";
 import {
   CalendarClock,
   Users,
-  LineChart,
+  LineChart as LineChartIcon,
   LayoutDashboard,
   Edit2,
   Activity,
@@ -20,22 +20,24 @@ import {
   Hospital,
   UserCircle,
   Mail,
-  BarChart
+  BarChart as BarChartIcon
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import {
-  BarChart as RechartsBarChart,
+  BarChart,
   Bar,
   XAxis,
   YAxis,
   CartesianGrid,
-  Tooltip as RechartsTooltip,
+  Tooltip,
   ResponsiveContainer,
   PieChart,
   Pie,
   Cell,
-  Legend
+  Legend,
+  LineChart,
+  Line
 } from "recharts";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 
@@ -342,7 +344,7 @@ const Dashboard = () => {
                   Appointments
                 </TabsTrigger>
                 <TabsTrigger value="analytics">
-                  <LineChart className="h-4 w-4 mr-2" />
+                  <LineChartIcon className="h-4 w-4 mr-2" />
                   Analytics
                 </TabsTrigger>
               </TabsList>
@@ -469,14 +471,14 @@ const Dashboard = () => {
                           <h3 className="text-md font-medium mb-4">Appointments by Purpose</h3>
                           <div className="h-64">
                             <ResponsiveContainer width="100%" height="100%">
-                              <RechartsBarChart
+                              <BarChart
                                 data={appointmentsByPurpose}
                                 margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
                               >
                                 <CartesianGrid strokeDasharray="3 3" />
                                 <XAxis dataKey="name" />
                                 <YAxis allowDecimals={false} />
-                                <RechartsTooltip 
+                                <Tooltip 
                                   formatter={(value, name) => [`${value} appointments`, 'Total']}
                                   labelFormatter={(label) => `Purpose: ${label}`}
                                 />
@@ -491,7 +493,7 @@ const Dashboard = () => {
                                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                                   ))}
                                 </Bar>
-                              </RechartsBarChart>
+                              </BarChart>
                             </ResponsiveContainer>
                           </div>
                         </div>
@@ -519,31 +521,42 @@ const Dashboard = () => {
                         <div>
                           <h3 className="text-md font-medium mb-4">Monthly Appointment Trends</h3>
                           <div className="h-64">
-                            <ChartContainer
-                              config={{
-                                appointments: {
-                                  label: "Appointments",
-                                  theme: {
-                                    light: "#0369a1",
-                                    dark: "#38bdf8"
-                                  }
-                                }
-                              }}
-                            >
-                              <BarChart data={appointmentsByMonth}>
+                            <ResponsiveContainer width="100%" height="100%">
+                              <LineChart
+                                data={appointmentsByMonth}
+                                margin={{
+                                  top: 5,
+                                  right: 30,
+                                  left: 20,
+                                  bottom: 5,
+                                }}
+                              >
                                 <CartesianGrid strokeDasharray="3 3" />
                                 <XAxis dataKey="name" />
                                 <YAxis allowDecimals={false} />
-                                <ChartTooltip
-                                  content={
-                                    <ChartTooltipContent
-                                      labelFormatter={(label) => `Month: ${label}`}
-                                    />
-                                  }
+                                <Tooltip />
+                                <Legend />
+                                <Line
+                                  type="monotone"
+                                  dataKey="attended"
+                                  stroke="#00C49F"
+                                  activeDot={{ r: 8 }}
+                                  name="Attended"
                                 />
-                                <Bar dataKey="appointments" />
-                              </BarChart>
-                            </ChartContainer>
+                                <Line
+                                  type="monotone"
+                                  dataKey="missed"
+                                  stroke="#0088FE"
+                                  name="Missed"
+                                />
+                                <Line
+                                  type="monotone"
+                                  dataKey="canceled"
+                                  stroke="#FF8042"
+                                  name="Canceled"
+                                />
+                              </LineChart>
+                            </ResponsiveContainer>
                           </div>
                         </div>
                         
@@ -578,7 +591,7 @@ const Dashboard = () => {
                       </div>
                     ) : (
                       <div className="text-center py-8">
-                        <LineChart className="h-16 w-16 mx-auto text-gray-300 mb-4" />
+                        <LineChartIcon className="h-16 w-16 mx-auto text-gray-300 mb-4" />
                         <p className="text-gray-600">
                           Detailed analytics about your appointments and patient care metrics will be displayed here as you continue to use the platform.
                         </p>
