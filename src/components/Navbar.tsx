@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from "react";
 import { Button } from "../components/ui/button";
-import { Menu, X, Activity } from "lucide-react";
+import { Menu, X, Refresh } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const Navbar: React.FC = () => {
@@ -30,7 +30,7 @@ const Navbar: React.FC = () => {
     >
       <div className="container max-w-7xl mx-auto px-4 md:px-6 flex items-center justify-between">
         <Link to="/" className="flex items-center space-x-2">
-          <Activity className="h-6 w-6 text-health-600" strokeWidth={2.5} />
+          <Refresh className="h-6 w-6 text-health-600" strokeWidth={2.5} />
           <span className="text-2xl font-semibold bg-gradient-to-r from-health-700 to-health-500 bg-clip-text text-transparent">
             SynchoraHealth
           </span>
