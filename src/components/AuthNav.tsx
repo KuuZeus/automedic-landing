@@ -16,10 +16,12 @@ const AuthNav = () => {
       <div className="container mx-auto px-4 max-w-7xl">
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center">
-            <Link to="/patient-schedule" className="flex items-center space-x-2">
-              <span className="text-xl font-semibold bg-gradient-to-r from-health-700 to-health-500 bg-clip-text text-transparent">
-                SynchoraHealth
-              </span>
+            <Link to="/patient-schedule" className="flex items-center">
+              <img 
+                src="/lovable-uploads/df9b6056-a446-4110-afd9-43380f806621.png" 
+                alt="SynchoraHealth Logo" 
+                className="h-8"
+              />
             </Link>
           </div>
           
