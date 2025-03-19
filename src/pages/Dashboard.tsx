@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import AuthNav from "@/components/AuthNav";
@@ -13,15 +12,12 @@ import { Label } from "@/components/ui/label";
 import {
   CalendarClock,
   Users,
-  LineChart as LineChartIcon,
+  LineChartIcon,
   LayoutDashboard,
   Edit2,
-  Activity,
-  Clipboard,
   Hospital,
   UserCircle,
-  Mail,
-  BarChart as BarChartIcon
+  Mail
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -31,7 +27,7 @@ import {
   XAxis,
   YAxis,
   CartesianGrid,
-  Tooltip,
+  Tooltip as RechartsTooltip,
   ResponsiveContainer,
   PieChart,
   Pie,
@@ -42,7 +38,6 @@ import {
 } from "recharts";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 
-// Define an interface for monthly stats to fix TypeScript errors
 interface MonthlyStats {
   attended: number;
   missed: number;
@@ -68,6 +63,8 @@ const Dashboard = () => {
   const [appointmentsByPurpose, setAppointmentsByPurpose] = useState([]);
   const [appointmentsByMonth, setAppointmentsByMonth] = useState([]);
   const navigate = useNavigate();
+
+  const COLORS = ['#9b87f5', '#0EA5E9', '#F97316', '#D946EF', '#8B5CF6', '#6E59A5'];
 
   useEffect(() => {
     if (!loading && !user) {
@@ -99,7 +96,8 @@ const Dashboard = () => {
 
           const { data: appointmentsData, error: appointmentsError } = await supabase
             .from('appointments')
-            .select('status, purpose, date');
+            .select('status, purpose, date')
+            .or(`clinic.eq.${profileData.clinic},hospital.eq.${profileData.hospital}`);
 
           if (appointmentsError) throw appointmentsError;
 
@@ -116,7 +114,6 @@ const Dashboard = () => {
               canceled: canceledCount
             });
 
-            // Prepare data for bar chart by purpose
             const purposeGroups: Record<string, number> = {};
             appointmentsData.forEach(app => {
               purposeGroups[app.purpose] = (purposeGroups[app.purpose] || 0) + 1;
@@ -128,7 +125,6 @@ const Dashboard = () => {
             }));
             setAppointmentsByPurpose(purposeData);
 
-            // Process data for monthly trends with multiple status lines
             const months: Record<string, MonthlyStats> = {};
             appointmentsData.forEach(app => {
               const date = new Date(app.date);
@@ -147,7 +143,7 @@ const Dashboard = () => {
               } else if (app.status === 'canceled') {
                 months[monthYear].canceled += 1;
               } else if (app.status === 'pending') {
-                months[monthYear].missed += 1; // Using pending as missed for demonstration
+                months[monthYear].missed += 1;
               }
             });
             
@@ -218,8 +214,6 @@ const Dashboard = () => {
   }
 
   if (!user) return null;
-
-  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d'];
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
@@ -361,274 +355,173 @@ const Dashboard = () => {
           </Card>
 
           <div className="md:col-span-2 space-y-6">
-            <Tabs defaultValue="overview" className="w-full">
-              <TabsList className="mb-4">
-                <TabsTrigger value="overview">
-                  <LayoutDashboard className="h-4 w-4 mr-2" />
-                  Overview
-                </TabsTrigger>
-                <TabsTrigger value="appointments">
-                  <CalendarClock className="h-4 w-4 mr-2" />
-                  Appointments
-                </TabsTrigger>
-                <TabsTrigger value="analytics">
-                  <LineChartIcon className="h-4 w-4 mr-2" />
-                  Analytics
-                </TabsTrigger>
-              </TabsList>
-              
-              <TabsContent value="overview" className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                  <Card>
-                    <CardHeader className="pb-2">
-                      <CardDescription>Total Appointments</CardDescription>
-                      <CardTitle className="text-3xl">{appointmentStats.total}</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-xs text-muted-foreground">
-                        Across all time
-                      </div>
-                    </CardContent>
-                  </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle>Dashboard Overview</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <Card>
+                      <CardHeader className="pb-2">
+                        <CardDescription>Total Appointments</CardDescription>
+                        <CardTitle className="text-3xl">{appointmentStats.total}</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="text-xs text-muted-foreground">
+                          Across all time
+                        </div>
+                      </CardContent>
+                    </Card>
+                    
+                    <Card>
+                      <CardHeader className="pb-2">
+                        <CardDescription>Pending</CardDescription>
+                        <CardTitle className="text-3xl">{appointmentStats.pending}</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="text-xs text-muted-foreground">
+                          Appointments to attend
+                        </div>
+                      </CardContent>
+                    </Card>
+                    
+                    <Card>
+                      <CardHeader className="pb-2">
+                        <CardDescription>Completed</CardDescription>
+                        <CardTitle className="text-3xl">{appointmentStats.attended}</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="text-xs text-muted-foreground">
+                          Appointments attended
+                        </div>
+                      </CardContent>
+                    </Card>
+                    
+                    <Card>
+                      <CardHeader className="pb-2">
+                        <CardDescription>Canceled</CardDescription>
+                        <CardTitle className="text-3xl">{appointmentStats.canceled}</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="text-xs text-muted-foreground">
+                          Appointments canceled
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
                   
-                  <Card>
-                    <CardHeader className="pb-2">
-                      <CardDescription>Pending</CardDescription>
-                      <CardTitle className="text-3xl">{appointmentStats.pending}</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-xs text-muted-foreground">
-                        Appointments to attend
-                      </div>
-                    </CardContent>
-                  </Card>
-                  
-                  <Card>
-                    <CardHeader className="pb-2">
-                      <CardDescription>Completed</CardDescription>
-                      <CardTitle className="text-3xl">{appointmentStats.attended}</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-xs text-muted-foreground">
-                        Appointments attended
-                      </div>
-                    </CardContent>
-                  </Card>
-                  
-                  <Card>
-                    <CardHeader className="pb-2">
-                      <CardDescription>Canceled</CardDescription>
-                      <CardTitle className="text-3xl">{appointmentStats.canceled}</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-xs text-muted-foreground">
-                        Appointments canceled
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
-                
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Activity Overview</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    {appointmentsByMonth.length > 0 ? (
-                      <div className="h-64">
-                        <ResponsiveContainer width="100%" height="100%">
-                          <BarChart
-                            data={appointmentsByMonth}
-                            margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-                          >
-                            <CartesianGrid strokeDasharray="3 3" />
-                            <XAxis dataKey="name" />
-                            <YAxis allowDecimals={false} />
-                            <Tooltip />
-                            <Bar dataKey="appointments" fill="#0369a1" />
-                          </BarChart>
-                        </ResponsiveContainer>
-                      </div>
-                    ) : (
-                      <div className="text-center py-8">
-                        <p className="text-gray-600">
-                          Your recent activity and personal analytics will appear here as you use the platform.
-                        </p>
-                        <Button 
-                          className="mt-4 bg-health-600 hover:bg-health-700"
-                          onClick={() => navigate('/patient-schedule')}
+                  <div>
+                    <h3 className="text-md font-medium mb-4">Monthly Appointment Trends</h3>
+                    <div className="h-64">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <LineChart
+                          data={appointmentsByMonth}
+                          margin={{
+                            top: 5,
+                            right: 30,
+                            left: 20,
+                            bottom: 5,
+                          }}
                         >
-                          Go to Patient Schedule
-                        </Button>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              </TabsContent>
-              
-              <TabsContent value="appointments">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Appointment Summary</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                        <div className="flex items-center">
-                          <CalendarClock className="h-5 w-5 text-health-600 mr-3" />
-                          <div>
-                            <p className="font-medium">Pending Appointments</p>
-                            <p className="text-sm text-gray-500">Scheduled for future dates</p>
-                          </div>
-                        </div>
-                        <span className="text-xl font-semibold">{appointmentStats.pending}</span>
-                      </div>
-                      
-                      <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                        <div className="flex items-center">
-                          <Users className="h-5 w-5 text-health-600 mr-3" />
-                          <div>
-                            <p className="font-medium">Attended Appointments</p>
-                            <p className="text-sm text-gray-500">Successfully completed</p>
-                          </div>
-                        </div>
-                        <span className="text-xl font-semibold">{appointmentStats.attended}</span>
-                      </div>
-                      
-                      {appointmentsByPurpose.length > 0 && (
-                        <div className="mt-6">
-                          <h3 className="text-md font-medium mb-4">Appointments by Purpose</h3>
-                          <div className="h-64">
-                            <ResponsiveContainer width="100%" height="100%">
-                              <BarChart
-                                data={appointmentsByPurpose}
-                                margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-                              >
-                                <CartesianGrid strokeDasharray="3 3" />
-                                <XAxis dataKey="name" />
-                                <YAxis allowDecimals={false} />
-                                <Tooltip 
-                                  formatter={(value, name) => [`${value} appointments`, 'Total']}
-                                  labelFormatter={(label) => `Purpose: ${label}`}
-                                />
-                                <Legend />
-                                <Bar 
-                                  dataKey="value" 
-                                  name="Appointments" 
-                                  fill="#0369a1"
-                                  radius={[4, 4, 0, 0]}
-                                >
-                                  {appointmentsByPurpose.map((entry, index) => (
-                                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                                  ))}
-                                </Bar>
-                              </BarChart>
-                            </ResponsiveContainer>
-                          </div>
-                        </div>
-                      )}
-                      
-                      <Button 
-                        className="w-full bg-health-600 hover:bg-health-700"
-                        onClick={() => navigate('/patient-schedule')}
-                      >
-                        View Full Schedule
-                      </Button>
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis dataKey="name" />
+                          <YAxis allowDecimals={false} />
+                          <RechartsTooltip />
+                          <Legend />
+                          <Line
+                            type="monotone"
+                            dataKey="attended"
+                            stroke="#00C49F"
+                            activeDot={{ r: 8 }}
+                            name="Attended"
+                          />
+                          <Line
+                            type="monotone"
+                            dataKey="missed"
+                            stroke="#0088FE"
+                            name="Missed"
+                          />
+                          <Line
+                            type="monotone"
+                            dataKey="canceled"
+                            stroke="#FF8042"
+                            name="Canceled"
+                          />
+                        </LineChart>
+                      </ResponsiveContainer>
                     </div>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-              
-              <TabsContent value="analytics">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Performance Analytics</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    {appointmentsByMonth.length > 0 ? (
-                      <div className="space-y-6">
-                        <div>
-                          <h3 className="text-md font-medium mb-4">Monthly Appointment Trends</h3>
-                          <div className="h-64">
-                            <ResponsiveContainer width="100%" height="100%">
-                              <LineChart
-                                data={appointmentsByMonth}
-                                margin={{
-                                  top: 5,
-                                  right: 30,
-                                  left: 20,
-                                  bottom: 5,
-                                }}
-                              >
-                                <CartesianGrid strokeDasharray="3 3" />
-                                <XAxis dataKey="name" />
-                                <YAxis allowDecimals={false} />
-                                <Tooltip />
-                                <Legend />
-                                <Line
-                                  type="monotone"
-                                  dataKey="attended"
-                                  stroke="#00C49F"
-                                  activeDot={{ r: 8 }}
-                                  name="Attended"
-                                />
-                                <Line
-                                  type="monotone"
-                                  dataKey="missed"
-                                  stroke="#0088FE"
-                                  name="Missed"
-                                />
-                                <Line
-                                  type="monotone"
-                                  dataKey="canceled"
-                                  stroke="#FF8042"
-                                  name="Canceled"
-                                />
-                              </LineChart>
-                            </ResponsiveContainer>
-                          </div>
-                        </div>
-                        
-                        <div>
-                          <h3 className="text-md font-medium mb-4">Appointment Distribution</h3>
-                          <div className="h-64">
-                            <ResponsiveContainer width="100%" height="100%">
-                              <PieChart>
-                                <Pie
-                                  data={[
-                                    { name: 'Pending', value: appointmentStats.pending },
-                                    { name: 'Attended', value: appointmentStats.attended },
-                                    { name: 'Canceled', value: appointmentStats.canceled }
-                                  ]}
-                                  cx="50%"
-                                  cy="50%"
-                                  labelLine={false}
-                                  outerRadius={80}
-                                  fill="#8884d8"
-                                  dataKey="value"
-                                  label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                                >
-                                  <Cell fill="#0088FE" />
-                                  <Cell fill="#00C49F" />
-                                  <Cell fill="#FF8042" />
-                                </Pie>
-                                <Tooltip />
-                              </PieChart>
-                            </ResponsiveContainer>
-                          </div>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="text-center py-8">
-                        <LineChartIcon className="h-16 w-16 mx-auto text-gray-300 mb-4" />
-                        <p className="text-gray-600">
-                          Detailed analytics about your appointments and patient care metrics will be displayed here as you continue to use the platform.
-                        </p>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              </TabsContent>
-            </Tabs>
+                  </div>
+                  
+                  <div>
+                    <h3 className="text-md font-medium mb-4">Appointments by Purpose of Visit</h3>
+                    <div className="h-64">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart
+                          data={appointmentsByPurpose}
+                          margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                        >
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis dataKey="name" label={{ value: 'Purpose of Visit', position: 'insideBottom', offset: -5 }} />
+                          <YAxis allowDecimals={false} label={{ value: 'Number of Appointments', angle: -90, position: 'insideLeft' }} />
+                          <RechartsTooltip 
+                            formatter={(value, name) => [`${value} appointments`, 'Total']}
+                            labelFormatter={(label) => `Purpose: ${label}`}
+                          />
+                          <Legend />
+                          <Bar 
+                            dataKey="value" 
+                            name="Appointments" 
+                            radius={[4, 4, 0, 0]}
+                          >
+                            {appointmentsByPurpose.map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                            ))}
+                          </Bar>
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <h3 className="text-md font-medium mb-4">Appointment Status Distribution</h3>
+                    <div className="h-64">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                          <Pie
+                            data={[
+                              { name: 'Pending', value: appointmentStats.pending },
+                              { name: 'Attended', value: appointmentStats.attended },
+                              { name: 'Canceled', value: appointmentStats.canceled }
+                            ]}
+                            cx="50%"
+                            cy="50%"
+                            labelLine={false}
+                            outerRadius={80}
+                            fill="#8884d8"
+                            dataKey="value"
+                            label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                          >
+                            <Cell fill="#0088FE" />
+                            <Cell fill="#00C49F" />
+                            <Cell fill="#FF8042" />
+                          </Pie>
+                          <RechartsTooltip />
+                          <Legend />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </div>
+                  
+                  <Button 
+                    className="w-full bg-health-600 hover:bg-health-700"
+                    onClick={() => navigate('/patient-schedule')}
+                  >
+                    View Full Schedule
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </main>
