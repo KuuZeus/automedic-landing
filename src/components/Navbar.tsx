@@ -3,10 +3,12 @@ import React, { useState, useEffect } from "react";
 import { Button } from "../components/ui/button";
 import { Menu, X, RefreshCw } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const Navbar: React.FC = () => {
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -24,14 +26,14 @@ const Navbar: React.FC = () => {
     <header
       className={`fixed top-0 left-0 right-0 z-50 transition-all-300 ${
         scrolled
-          ? "bg-white/80 backdrop-blur-md py-4 shadow-sm"
-          : "bg-transparent py-6"
+          ? "bg-white/80 backdrop-blur-md py-3 shadow-sm"
+          : "bg-transparent py-4 md:py-6"
       }`}
     >
       <div className="container max-w-7xl mx-auto px-4 md:px-6 flex items-center justify-between">
         <Link to="/" className="flex items-center space-x-2">
-          <RefreshCw className="h-6 w-6 text-health-600" strokeWidth={2.5} />
-          <span className="text-2xl font-semibold bg-gradient-to-r from-health-700 to-health-500 bg-clip-text text-transparent">
+          <RefreshCw className="h-5 w-5 sm:h-6 sm:w-6 text-health-600" strokeWidth={2.5} />
+          <span className="text-lg sm:text-2xl font-semibold bg-gradient-to-r from-health-700 to-health-500 bg-clip-text text-transparent">
             SynchoraHealth
           </span>
         </Link>
