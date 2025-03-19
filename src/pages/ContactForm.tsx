@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
@@ -54,38 +53,18 @@ const ContactForm = () => {
     try {
       console.log("Form submitted with data:", data);
       
-      // Save to Supabase
-      const { error: dbError } = await supabase
-        .from('contact_submissions')
-        .insert({
-          facility_name: data.facilityName,
-          contact_name: data.contactName,
-          email: data.email,
-          phone: data.phone,
-          facility_type: data.facilityType,
-          facility_size: data.facilitySize,
-          location: data.location,
-          message: data.message || null
-        });
-      
-      if (dbError) {
-        throw new Error(`Database error: ${dbError.message}`);
-      }
-      
-      // Send email via Edge Function
+      // Skip the Supabase database storage and directly use the Edge Function
       const { error: emailError } = await supabase.functions.invoke('send-contact-email', {
         body: data
       });
       
       if (emailError) {
         console.error("Email error:", emailError);
-        // We still consider the form submission successful if only the email fails
-        toast.warning("Your request was saved but there was an issue sending the email notification.");
+        toast.error("Something went wrong. Please try again later.");
       } else {
         toast.success("Thank you for your interest! We'll contact you shortly.");
+        form.reset();
       }
-      
-      form.reset();
     } catch (error: any) {
       console.error("Submission error:", error);
       toast.error("Something went wrong. Please try again later.");

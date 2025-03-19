@@ -31,7 +31,7 @@ const handler = async (req: Request): Promise<Response> => {
     const formData: ContactFormData = await req.json();
     console.log("Received form data:", formData);
 
-    // Send email to the destination email address
+    // Skip saving to database and directly send email
     const { data, error } = await resend.emails.send({
       from: "SynchoraHealth <onboarding@resend.dev>",
       to: ["info.remindcare@gmail.com"],
