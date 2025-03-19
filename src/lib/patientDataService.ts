@@ -1,4 +1,3 @@
-
 import { create } from 'zustand';
 import { format } from 'date-fns';
 
@@ -21,6 +20,9 @@ export interface PatientAppointment {
   purpose: string;
   status: 'pending' | 'attended';
   notes?: string;
+  nextReviewDate?: string; // Added for next review date
+  hospital?: string; // Added hospital field
+  clinic?: string; // Added clinic field
 }
 
 interface PatientStore {
