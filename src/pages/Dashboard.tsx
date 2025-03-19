@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import AuthNav from "@/components/AuthNav";
@@ -28,6 +27,7 @@ import {
   ResponsiveContainer,
   Cell,
   Legend,
+  TooltipProps,
 } from "recharts";
 
 const Dashboard = () => {
@@ -49,7 +49,6 @@ const Dashboard = () => {
   const [appointmentsByPurpose, setAppointmentsByPurpose] = useState([]);
   const navigate = useNavigate();
 
-  // Define specific colors for common visit purposes
   const PURPOSE_COLORS = {
     'Follow up': '#F97316',
     'Medication review': '#8B5CF6',
@@ -60,8 +59,7 @@ const Dashboard = () => {
     'Lab Results': '#7E69AB',
     'Chronic disease management': '#D6BCFA'
   };
-  
-  // Default colors for any purposes not in the specific map
+
   const DEFAULT_COLORS = ['#9b87f5', '#0EA5E9', '#F97316', '#D946EF', '#8B5CF6', '#6E59A5'];
 
   useEffect(() => {
@@ -92,7 +90,6 @@ const Dashboard = () => {
             setRole(profileData.role || "User");
           }
 
-          // Query appointments - removed the doctor_id filter since that column doesn't exist
           const { data: appointmentsData, error: appointmentsError } = await supabase
             .from('appointments')
             .select('status, purpose, date');
@@ -112,12 +109,9 @@ const Dashboard = () => {
               canceled: canceledCount
             });
 
-            // Group appointments by purpose
             const purposeGroups: Record<string, number> = {};
             
-            // Define sample purposes if no data exists
             if (appointmentsData.length === 0 || !appointmentsData.some(app => app.purpose)) {
-              // Sample data for demonstration
               purposeGroups['Initial Consultation'] = 1;
               purposeGroups['Vaccination'] = 1;
               purposeGroups['Follow up'] = 3;
@@ -132,9 +126,7 @@ const Dashboard = () => {
               });
             }
             
-            // Create data for the chart with assigned colors
             const purposeData = Object.entries(purposeGroups).map(([name, value]) => {
-              // Assign a specific color if we have one defined, otherwise use a default
               const color = PURPOSE_COLORS[name] || DEFAULT_COLORS[Object.keys(purposeGroups).indexOf(name) % DEFAULT_COLORS.length];
               return {
                 name,
@@ -204,8 +196,11 @@ const Dashboard = () => {
 
   if (!user) return null;
 
-  // Custom tooltip content for the chart
-  const CustomTooltip = ({ active, payload, label }) => {
+  const CustomTooltip = ({ 
+    active, 
+    payload, 
+    label 
+  }: TooltipProps<number, string>) => {
     if (active && payload && payload.length) {
       return (
         <div className="bg-white p-2 border border-gray-200 shadow-md rounded-md">
@@ -424,7 +419,7 @@ const Dashboard = () => {
                           <CartesianGrid strokeDasharray="3 3" />
                           <XAxis 
                             dataKey="name" 
-                            tick={false} // This hides the x-axis labels
+                            tick={false}
                             axisLine={{ stroke: '#E2E8F0' }}  
                           />
                           <YAxis 
