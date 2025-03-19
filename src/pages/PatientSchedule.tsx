@@ -41,6 +41,13 @@ import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface DbAppointment {
   id: string;
@@ -70,6 +77,9 @@ const appointmentFormSchema = z.object({
   time: z.string().min(1, { message: "Time is required" }),
   purpose: z.string().min(1, { message: "Purpose is required" }),
   notes: z.string().optional(),
+  appointmentType: z.enum(["internal", "external"]),
+  hospital: z.string().min(1, { message: "Hospital is required" }),
+  clinic: z.string().optional(),
 });
 
 const PatientSchedule = () => {
@@ -196,6 +206,13 @@ const PatientSchedule = () => {
         return;
       }
 
+      let hospitalValue = data.hospital;
+      let clinicValue = data.clinic;
+
+      if (data.appointmentType === "internal") {
+        hospitalValue = profile.hospital || data.hospital;
+      }
+
       const appointmentData = {
         patient_id: data.patientId,
         patient_name: data.patientName,
@@ -204,8 +221,8 @@ const PatientSchedule = () => {
         purpose: data.purpose,
         notes: data.notes || null,
         status: 'pending',
-        hospital: profile.hospital,
-        clinic: profile.clinic
+        hospital: hospitalValue,
+        clinic: clinicValue
       };
 
       const { data: newAppointment, error } = await supabase
@@ -351,6 +368,8 @@ const PatientSchedule = () => {
                 <NewAppointmentForm
                   onSubmit={addAppointment}
                   selectedDate={selectedDate}
+                  currentHospital={profile.hospital}
+                  currentClinic={profile.clinic}
                 />
               </DialogContent>
             </Dialog>
@@ -479,11 +498,17 @@ const PatientSchedule = () => {
 
 const NewAppointmentForm = ({ 
   onSubmit,
-  selectedDate
+  selectedDate,
+  currentHospital,
+  currentClinic
 }: { 
   onSubmit: (data: z.infer<typeof appointmentFormSchema>) => void,
-  selectedDate: Date
+  selectedDate: Date,
+  currentHospital: string | null,
+  currentClinic: string | null
 }) => {
+  const [appointmentType, setAppointmentType] = useState<string>("internal");
+
   const form = useForm<z.infer<typeof appointmentFormSchema>>({
     resolver: zodResolver(appointmentFormSchema),
     defaultValues: {
@@ -492,13 +517,54 @@ const NewAppointmentForm = ({
       date: format(selectedDate, 'yyyy-MM-dd'),
       time: "",
       purpose: "",
-      notes: ""
+      notes: "",
+      appointmentType: "internal",
+      hospital: currentHospital || "",
+      clinic: currentClinic || ""
     }
   });
+
+  const watchAppointmentType = form.watch("appointmentType");
+
+  useEffect(() => {
+    if (watchAppointmentType === "internal") {
+      form.setValue("hospital", currentHospital || "");
+    } else if (watchAppointmentType === "external" && form.getValues("hospital") === currentHospital) {
+      form.setValue("hospital", "");
+    }
+  }, [watchAppointmentType, currentHospital, form]);
 
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        <FormField
+          control={form.control}
+          name="appointmentType"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Appointment Type</FormLabel>
+              <FormControl>
+                <Select
+                  onValueChange={(value) => {
+                    field.onChange(value);
+                    setAppointmentType(value);
+                  }}
+                  defaultValue={field.value}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="internal">Internal (Same Hospital)</SelectItem>
+                    <SelectItem value="external">External (Different Hospital)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        
         <FormField
           control={form.control}
           name="patientName"
@@ -521,6 +587,36 @@ const NewAppointmentForm = ({
               <FormLabel>Patient ID</FormLabel>
               <FormControl>
                 <Input placeholder="Enter patient ID" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        
+        {watchAppointmentType === "external" && (
+          <FormField
+            control={form.control}
+            name="hospital"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Hospital</FormLabel>
+                <FormControl>
+                  <Input placeholder="Enter hospital name" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        )}
+        
+        <FormField
+          control={form.control}
+          name="clinic"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Clinic</FormLabel>
+              <FormControl>
+                <Input placeholder="Enter clinic name (optional)" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -622,6 +718,7 @@ const AppointmentsTable = ({
             <TableHead>Patient</TableHead>
             <TableHead>Time</TableHead>
             <TableHead>Purpose</TableHead>
+            <TableHead>Hospital/Clinic</TableHead>
             <TableHead>Next Review</TableHead>
             <TableHead>Actions</TableHead>
           </TableRow>
@@ -640,6 +737,14 @@ const AppointmentsTable = ({
               <TableCell className="font-medium">{appointment.patientName}</TableCell>
               <TableCell>{appointment.time}</TableCell>
               <TableCell>{appointment.purpose}</TableCell>
+              <TableCell>
+                <div className="flex flex-col">
+                  <span className="text-sm font-medium">{appointment.hospital}</span>
+                  {appointment.clinic && (
+                    <span className="text-xs text-gray-500">{appointment.clinic}</span>
+                  )}
+                </div>
+              </TableCell>
               <TableCell>{appointment.nextReviewDate || '-'}</TableCell>
               <TableCell>
                 <Button 
