@@ -30,12 +30,8 @@ import {
   CartesianGrid,
   Tooltip as RechartsTooltip,
   ResponsiveContainer,
-  PieChart,
-  Pie,
   Cell,
   Legend,
-  LineChart,
-  Line
 } from "recharts";
 
 interface MonthlyStats {
@@ -61,7 +57,6 @@ const Dashboard = () => {
     canceled: 0
   });
   const [appointmentsByPurpose, setAppointmentsByPurpose] = useState([]);
-  const [appointmentsByMonth, setAppointmentsByMonth] = useState([]);
   const navigate = useNavigate();
 
   const COLORS = ['#9b87f5', '#0EA5E9', '#F97316', '#D946EF', '#8B5CF6', '#6E59A5'];
@@ -119,42 +114,12 @@ const Dashboard = () => {
               purposeGroups[app.purpose] = (purposeGroups[app.purpose] || 0) + 1;
             });
             
-            const purposeData = Object.entries(purposeGroups).map(([name, value]) => ({
+            const purposeData = Object.entries(purposeGroups).map(([name, value], index) => ({
               name,
-              value
+              value,
+              fill: COLORS[index % COLORS.length]
             }));
             setAppointmentsByPurpose(purposeData);
-
-            const months: Record<string, MonthlyStats> = {};
-            appointmentsData.forEach(app => {
-              const date = new Date(app.date);
-              const monthYear = `${date.toLocaleString('default', { month: 'short' })}`;
-              
-              if (!months[monthYear]) {
-                months[monthYear] = {
-                  attended: 0,
-                  missed: 0,
-                  canceled: 0
-                };
-              }
-              
-              if (app.status === 'attended') {
-                months[monthYear].attended += 1;
-              } else if (app.status === 'canceled') {
-                months[monthYear].canceled += 1;
-              } else if (app.status === 'pending') {
-                months[monthYear].missed += 1;
-              }
-            });
-            
-            const monthData = Object.entries(months).map(([name, stats]) => ({
-              name,
-              attended: stats.attended,
-              missed: stats.missed,
-              canceled: stats.canceled
-            }));
-            
-            setAppointmentsByMonth(monthData);
           }
         } catch (error) {
           console.error("Error fetching user data:", error);
@@ -412,103 +377,45 @@ const Dashboard = () => {
                   </div>
                   
                   <div>
-                    <h3 className="text-md font-medium mb-4">Monthly Appointment Trends</h3>
-                    <div className="h-64">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <LineChart
-                          data={appointmentsByMonth}
-                          margin={{
-                            top: 5,
-                            right: 30,
-                            left: 20,
-                            bottom: 5,
-                          }}
-                        >
-                          <CartesianGrid strokeDasharray="3 3" />
-                          <XAxis dataKey="name" />
-                          <YAxis allowDecimals={false} />
-                          <RechartsTooltip />
-                          <Legend />
-                          <Line
-                            type="monotone"
-                            dataKey="attended"
-                            stroke="#00C49F"
-                            activeDot={{ r: 8 }}
-                            name="Attended"
-                          />
-                          <Line
-                            type="monotone"
-                            dataKey="missed"
-                            stroke="#0088FE"
-                            name="Missed"
-                          />
-                          <Line
-                            type="monotone"
-                            dataKey="canceled"
-                            stroke="#FF8042"
-                            name="Canceled"
-                          />
-                        </LineChart>
-                      </ResponsiveContainer>
-                    </div>
-                  </div>
-                  
-                  <div>
                     <h3 className="text-md font-medium mb-4">Appointments by Purpose of Visit</h3>
-                    <div className="h-64">
+                    <div className="h-72">
                       <ResponsiveContainer width="100%" height="100%">
                         <BarChart
                           data={appointmentsByPurpose}
-                          margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                          margin={{ top: 20, right: 30, left: 20, bottom: 70 }}
                         >
                           <CartesianGrid strokeDasharray="3 3" />
-                          <XAxis dataKey="name" label={{ value: 'Purpose of Visit', position: 'insideBottom', offset: -5 }} />
-                          <YAxis allowDecimals={false} label={{ value: 'Number of Appointments', angle: -90, position: 'insideLeft' }} />
+                          <XAxis 
+                            dataKey="name" 
+                            angle={-45} 
+                            textAnchor="end" 
+                            height={70} 
+                            label={{ value: 'Purpose of Visit', position: 'insideBottom', offset: -35 }}
+                          />
+                          <YAxis 
+                            allowDecimals={false} 
+                            label={{ value: 'Number of Appointments', angle: -90, position: 'insideLeft' }}
+                          />
                           <RechartsTooltip 
-                            formatter={(value, name) => [`${value} appointments`, 'Total']}
+                            formatter={(value) => [`${value} appointments`, 'Total']}
                             labelFormatter={(label) => `Purpose: ${label}`}
                           />
-                          <Legend />
+                          <Legend 
+                            layout="horizontal" 
+                            verticalAlign="top" 
+                            align="center"
+                            wrapperStyle={{ paddingBottom: '10px' }}
+                          />
                           <Bar 
                             dataKey="value" 
                             name="Appointments" 
                             radius={[4, 4, 0, 0]}
                           >
                             {appointmentsByPurpose.map((entry, index) => (
-                              <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                              <Cell key={`cell-${index}`} fill={entry.fill || COLORS[index % COLORS.length]} />
                             ))}
                           </Bar>
                         </BarChart>
-                      </ResponsiveContainer>
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <h3 className="text-md font-medium mb-4">Appointment Status Distribution</h3>
-                    <div className="h-64">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <PieChart>
-                          <Pie
-                            data={[
-                              { name: 'Pending', value: appointmentStats.pending },
-                              { name: 'Attended', value: appointmentStats.attended },
-                              { name: 'Canceled', value: appointmentStats.canceled }
-                            ]}
-                            cx="50%"
-                            cy="50%"
-                            labelLine={false}
-                            outerRadius={80}
-                            fill="#8884d8"
-                            dataKey="value"
-                            label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                          >
-                            <Cell fill="#0088FE" />
-                            <Cell fill="#00C49F" />
-                            <Cell fill="#FF8042" />
-                          </Pie>
-                          <RechartsTooltip />
-                          <Legend />
-                        </PieChart>
                       </ResponsiveContainer>
                     </div>
                   </div>
