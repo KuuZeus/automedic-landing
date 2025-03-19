@@ -10,9 +10,32 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { CalendarClock, Users, LineChart, LayoutDashboard, Edit2 } from "lucide-react";
+import {
+  CalendarClock,
+  Users,
+  LineChart,
+  LayoutDashboard,
+  Edit2,
+  Activity,
+  Clipboard,
+  Hospital,
+  UserCircle
+} from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell
+} from "recharts";
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 
 const Dashboard = () => {
   const { user, loading } = useAuth();
@@ -21,12 +44,17 @@ const Dashboard = () => {
   const [lastName, setLastName] = useState("");
   const [specialty, setSpecialty] = useState("");
   const [clinic, setClinic] = useState("");
+  const [hospital, setHospital] = useState("");
+  const [role, setRole] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [appointmentStats, setAppointmentStats] = useState({
     total: 0,
     pending: 0,
-    attended: 0
+    attended: 0,
+    canceled: 0
   });
+  const [appointmentsByPurpose, setAppointmentsByPurpose] = useState([]);
+  const [appointmentsByMonth, setAppointmentsByMonth] = useState([]);
   const navigate = useNavigate();
 
   // Redirect if user is not logged in
@@ -56,12 +84,14 @@ const Dashboard = () => {
             setLastName(profileData.last_name || "");
             setSpecialty(profileData.specialty || "");
             setClinic(profileData.clinic || "");
+            setHospital(profileData.hospital || "");
+            setRole(profileData.role || "User");
           }
 
           // Fetch appointment statistics
           const { data: appointmentsData, error: appointmentsError } = await supabase
             .from('appointments')
-            .select('status');
+            .select('status, purpose, date');
 
           if (appointmentsError) throw appointmentsError;
 
@@ -69,12 +99,40 @@ const Dashboard = () => {
             const totalCount = appointmentsData.length;
             const pendingCount = appointmentsData.filter(app => app.status === 'pending').length;
             const attendedCount = appointmentsData.filter(app => app.status === 'attended').length;
+            const canceledCount = appointmentsData.filter(app => app.status === 'canceled').length;
             
             setAppointmentStats({
               total: totalCount,
               pending: pendingCount,
-              attended: attendedCount
+              attended: attendedCount,
+              canceled: canceledCount
             });
+
+            // Group appointments by purpose for pie chart
+            const purposeGroups = {};
+            appointmentsData.forEach(app => {
+              purposeGroups[app.purpose] = (purposeGroups[app.purpose] || 0) + 1;
+            });
+            
+            const purposeData = Object.entries(purposeGroups).map(([name, value]) => ({
+              name,
+              value
+            }));
+            setAppointmentsByPurpose(purposeData);
+
+            // Group appointments by month for bar chart
+            const months = {};
+            appointmentsData.forEach(app => {
+              const date = new Date(app.date);
+              const monthYear = `${date.toLocaleString('default', { month: 'short' })}`;
+              months[monthYear] = (months[monthYear] || 0) + 1;
+            });
+            
+            const monthData = Object.entries(months).map(([name, count]) => ({
+              name,
+              appointments: count
+            }));
+            setAppointmentsByMonth(monthData);
           }
         } catch (error) {
           console.error("Error fetching user data:", error);
@@ -100,6 +158,8 @@ const Dashboard = () => {
           last_name: lastName,
           specialty: specialty,
           clinic: clinic,
+          hospital: hospital,
+          role: role,
           updated_at: new Date().toISOString()
         });
 
@@ -123,6 +183,9 @@ const Dashboard = () => {
 
   // Return early if user is not authenticated
   if (!user) return null;
+
+  // Colors for PieChart
+  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
@@ -161,8 +224,28 @@ const Dashboard = () => {
                     <h3 className="text-xl font-medium">
                       {firstName || lastName ? `${firstName} ${lastName}` : user.email}
                     </h3>
-                    {specialty && <p className="text-gray-500">{specialty}</p>}
-                    {clinic && <p className="text-gray-500">{clinic}</p>}
+                    <div className="flex items-center justify-center mt-1">
+                      <UserCircle className="h-4 w-4 text-health-600 mr-1" />
+                      <p className="text-gray-500">{role || "User"}</p>
+                    </div>
+                    {specialty && (
+                      <div className="flex items-center justify-center mt-1">
+                        <Clipboard className="h-4 w-4 text-health-600 mr-1" />
+                        <p className="text-gray-500">{specialty}</p>
+                      </div>
+                    )}
+                    {clinic && (
+                      <div className="flex items-center justify-center mt-1">
+                        <Hospital className="h-4 w-4 text-health-600 mr-1" />
+                        <p className="text-gray-500">Clinic: {clinic}</p>
+                      </div>
+                    )}
+                    {hospital && (
+                      <div className="flex items-center justify-center mt-1">
+                        <Hospital className="h-4 w-4 text-health-600 mr-1" />
+                        <p className="text-gray-500">Hospital: {hospital}</p>
+                      </div>
+                    )}
                     <p className="text-gray-500 text-sm mt-2">{user.email}</p>
                   </div>
                 ) : (
@@ -184,6 +267,14 @@ const Dashboard = () => {
                       />
                     </div>
                     <div>
+                      <Label htmlFor="role">Role</Label>
+                      <Input 
+                        id="role" 
+                        value={role} 
+                        onChange={(e) => setRole(e.target.value)} 
+                      />
+                    </div>
+                    <div>
                       <Label htmlFor="specialty">Specialty</Label>
                       <Input 
                         id="specialty" 
@@ -197,6 +288,14 @@ const Dashboard = () => {
                         id="clinic" 
                         value={clinic} 
                         onChange={(e) => setClinic(e.target.value)} 
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="hospital">Hospital</Label>
+                      <Input 
+                        id="hospital" 
+                        value={hospital} 
+                        onChange={(e) => setHospital(e.target.value)} 
                       />
                     </div>
                     <Button 
@@ -230,7 +329,7 @@ const Dashboard = () => {
               </TabsList>
               
               <TabsContent value="overview" className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                   <Card>
                     <CardHeader className="pb-2">
                       <CardDescription>Total Appointments</CardDescription>
@@ -266,6 +365,18 @@ const Dashboard = () => {
                       </div>
                     </CardContent>
                   </Card>
+                  
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardDescription>Canceled</CardDescription>
+                      <CardTitle className="text-3xl">{appointmentStats.canceled}</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-xs text-muted-foreground">
+                        Appointments canceled
+                      </div>
+                    </CardContent>
+                  </Card>
                 </div>
                 
                 <Card>
@@ -273,17 +384,34 @@ const Dashboard = () => {
                     <CardTitle>Activity Overview</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-center py-8">
-                      <p className="text-gray-600">
-                        Your recent activity and personal analytics will appear here as you use the platform.
-                      </p>
-                      <Button 
-                        className="mt-4 bg-health-600 hover:bg-health-700"
-                        onClick={() => navigate('/patient-schedule')}
-                      >
-                        Go to Patient Schedule
-                      </Button>
-                    </div>
+                    {appointmentsByMonth.length > 0 ? (
+                      <div className="h-64">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <BarChart
+                            data={appointmentsByMonth}
+                            margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                          >
+                            <CartesianGrid strokeDasharray="3 3" />
+                            <XAxis dataKey="name" />
+                            <YAxis allowDecimals={false} />
+                            <Tooltip />
+                            <Bar dataKey="appointments" fill="#0369a1" />
+                          </BarChart>
+                        </ResponsiveContainer>
+                      </div>
+                    ) : (
+                      <div className="text-center py-8">
+                        <p className="text-gray-600">
+                          Your recent activity and personal analytics will appear here as you use the platform.
+                        </p>
+                        <Button 
+                          className="mt-4 bg-health-600 hover:bg-health-700"
+                          onClick={() => navigate('/patient-schedule')}
+                        >
+                          Go to Patient Schedule
+                        </Button>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               </TabsContent>
@@ -317,6 +445,33 @@ const Dashboard = () => {
                         <span className="text-xl font-semibold">{appointmentStats.attended}</span>
                       </div>
                       
+                      {appointmentsByPurpose.length > 0 && (
+                        <div className="mt-6">
+                          <h3 className="text-md font-medium mb-4">Appointments by Purpose</h3>
+                          <div className="h-64">
+                            <ResponsiveContainer width="100%" height="100%">
+                              <PieChart>
+                                <Pie
+                                  data={appointmentsByPurpose}
+                                  cx="50%"
+                                  cy="50%"
+                                  labelLine={false}
+                                  outerRadius={80}
+                                  fill="#8884d8"
+                                  dataKey="value"
+                                  label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                                >
+                                  {appointmentsByPurpose.map((entry, index) => (
+                                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                  ))}
+                                </Pie>
+                                <Tooltip />
+                              </PieChart>
+                            </ResponsiveContainer>
+                          </div>
+                        </div>
+                      )}
+                      
                       <Button 
                         className="w-full bg-health-600 hover:bg-health-700"
                         onClick={() => navigate('/patient-schedule')}
@@ -334,12 +489,76 @@ const Dashboard = () => {
                     <CardTitle>Performance Analytics</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-center py-8">
-                      <LineChart className="h-16 w-16 mx-auto text-gray-300 mb-4" />
-                      <p className="text-gray-600">
-                        Detailed analytics about your appointments and patient care metrics will be displayed here as you continue to use the platform.
-                      </p>
-                    </div>
+                    {appointmentsByMonth.length > 0 ? (
+                      <div className="space-y-6">
+                        <div>
+                          <h3 className="text-md font-medium mb-4">Monthly Appointment Trends</h3>
+                          <div className="h-64">
+                            <ChartContainer
+                              config={{
+                                appointments: {
+                                  label: "Appointments",
+                                  theme: {
+                                    light: "#0369a1",
+                                    dark: "#38bdf8"
+                                  }
+                                }
+                              }}
+                            >
+                              <BarChart data={appointmentsByMonth}>
+                                <CartesianGrid strokeDasharray="3 3" />
+                                <XAxis dataKey="name" />
+                                <YAxis allowDecimals={false} />
+                                <ChartTooltip
+                                  content={
+                                    <ChartTooltipContent
+                                      labelFormatter={(label) => `Month: ${label}`}
+                                    />
+                                  }
+                                />
+                                <Bar dataKey="appointments" />
+                              </BarChart>
+                            </ChartContainer>
+                          </div>
+                        </div>
+                        
+                        <div>
+                          <h3 className="text-md font-medium mb-4">Appointment Distribution</h3>
+                          <div className="h-64">
+                            <ResponsiveContainer width="100%" height="100%">
+                              <PieChart>
+                                <Pie
+                                  data={[
+                                    { name: 'Pending', value: appointmentStats.pending },
+                                    { name: 'Attended', value: appointmentStats.attended },
+                                    { name: 'Canceled', value: appointmentStats.canceled }
+                                  ]}
+                                  cx="50%"
+                                  cy="50%"
+                                  labelLine={false}
+                                  outerRadius={80}
+                                  fill="#8884d8"
+                                  dataKey="value"
+                                  label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                                >
+                                  <Cell fill="#0088FE" />
+                                  <Cell fill="#00C49F" />
+                                  <Cell fill="#FF8042" />
+                                </Pie>
+                                <Tooltip />
+                              </PieChart>
+                            </ResponsiveContainer>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="text-center py-8">
+                        <LineChart className="h-16 w-16 mx-auto text-gray-300 mb-4" />
+                        <p className="text-gray-600">
+                          Detailed analytics about your appointments and patient care metrics will be displayed here as you continue to use the platform.
+                        </p>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               </TabsContent>
