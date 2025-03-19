@@ -20,7 +20,7 @@ const AuthNav = () => {
               <img 
                 src="/lovable-uploads/df9b6056-a446-4110-afd9-43380f806621.png" 
                 alt="SynchoraHealth Logo" 
-                className="h-8"
+                className="h-12 w-auto"
               />
             </Link>
           </div>
