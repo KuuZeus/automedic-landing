@@ -15,14 +15,23 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import { UserRole } from "@/contexts/AuthContext";
 
 const formSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email address" }),
   password: z.string().min(6, { message: "Password must be at least 6 characters" }),
   firstName: z.string().min(1, { message: "First name is required" }),
   lastName: z.string().min(1, { message: "Last name is required" }),
+  role: z.enum(['super_admin', 'hospital_admin', 'appointment_manager', 'analytics_viewer'] as const),
   specialty: z.string().optional(),
   clinic: z.string().optional(),
   hospital: z.string().optional(),
@@ -42,6 +51,7 @@ const SignUp = () => {
       password: "",
       firstName: "",
       lastName: "",
+      role: "appointment_manager", // Default role
       specialty: "",
       clinic: "",
       hospital: "",
@@ -54,6 +64,7 @@ const SignUp = () => {
       await signUp(data.email, data.password, `${data.firstName} ${data.lastName}`, {
         firstName: data.firstName,
         lastName: data.lastName,
+        role: data.role,
         specialty: data.specialty,
         clinic: data.clinic,
         hospital: data.hospital,
@@ -145,6 +156,29 @@ const SignUp = () => {
                         {...field}
                       />
                     </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="role"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Role</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select your role" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="super_admin">System Administrator</SelectItem>
+                        <SelectItem value="hospital_admin">Hospital Administrator</SelectItem>
+                        <SelectItem value="appointment_manager">Appointment Manager</SelectItem>
+                        <SelectItem value="analytics_viewer">Analytics Viewer</SelectItem>
+                      </SelectContent>
+                    </Select>
                     <FormMessage />
                   </FormItem>
                 )}
