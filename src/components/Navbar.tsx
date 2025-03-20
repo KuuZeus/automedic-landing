@@ -40,12 +40,6 @@ const Navbar: React.FC = () => {
 
         {/* Desktop Navigation */}
         <nav className="hidden md:flex items-center space-x-8">
-          <Link
-            to="/platform"
-            className="text-sm font-medium text-gray-700 hover:text-health-600 transition-colors"
-          >
-            Platform
-          </Link>
           <a
             href="#features"
             className="text-sm font-medium text-gray-700 hover:text-health-600 transition-colors"
@@ -64,6 +58,14 @@ const Navbar: React.FC = () => {
           >
             Pricing
           </a>
+          <Link to="/sign-in">
+            <Button
+              variant="outline"
+              className="border-health-600 text-health-600 hover:bg-health-50"
+            >
+              Sign In
+            </Button>
+          </Link>
           <Link to="/contact">
             <Button
               className="bg-health-600 hover:bg-health-700 text-white rounded-full px-6"
@@ -85,13 +87,6 @@ const Navbar: React.FC = () => {
       {/* Mobile Navigation */}
       {mobileMenuOpen && (
         <nav className="md:hidden bg-white absolute top-full left-0 right-0 p-4 shadow-md flex flex-col space-y-4 animate-fade-in">
-          <Link
-            to="/platform"
-            className="text-gray-700 hover:text-health-600 transition-colors py-2 px-4"
-            onClick={() => setMobileMenuOpen(false)}
-          >
-            Platform
-          </Link>
           <a
             href="#features"
             className="text-gray-700 hover:text-health-600 transition-colors py-2 px-4"
@@ -113,6 +108,14 @@ const Navbar: React.FC = () => {
           >
             Pricing
           </a>
+          <Link to="/sign-in" onClick={() => setMobileMenuOpen(false)}>
+            <Button
+              variant="outline"
+              className="w-full border-health-600 text-health-600"
+            >
+              Sign In
+            </Button>
+          </Link>
           <Link to="/contact" onClick={() => setMobileMenuOpen(false)}>
             <Button
               className="bg-health-600 hover:bg-health-700 text-white w-full"

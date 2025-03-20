@@ -19,9 +19,12 @@ const Index = () => {
         <Benefits />
         <div className="max-w-7xl mx-auto px-4 py-8 md:py-12 text-center">
           <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-4 md:mb-6">Start Managing Appointments Today</h2>
-          <div className="flex justify-center">
+          <div className="flex flex-col md:flex-row justify-center items-center gap-4">
             <Button className="bg-health-600 hover:bg-health-700 h-10 md:h-12 text-sm md:text-base px-6 md:px-8" asChild>
               <Link to="/contact">Get Started</Link>
+            </Button>
+            <Button variant="outline" className="border-health-600 text-health-600 hover:bg-health-50 h-10 md:h-12 text-sm md:text-base px-6 md:px-8" asChild>
+              <Link to="/platform">Access Platform</Link>
             </Button>
           </div>
         </div>
