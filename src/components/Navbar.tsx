@@ -2,13 +2,15 @@
 import React, { useState, useEffect } from "react";
 import { Button } from "../components/ui/button";
 import { Menu, X, RefreshCw } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 const Navbar: React.FC = () => {
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const isMobile = useIsMobile();
+  const location = useLocation();
+  const isContactPage = location.pathname === "/contact";
 
   useEffect(() => {
     const handleScroll = () => {
@@ -21,6 +23,20 @@ const Navbar: React.FC = () => {
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, [scrolled]);
+
+  const scrollToSection = (id: string) => {
+    if (isContactPage) {
+      // If we're on the contact page, navigate to homepage first
+      window.location.href = `/#${id}`;
+      return;
+    }
+    
+    const element = document.getElementById(id);
+    if (element) {
+      element.scrollIntoView({ behavior: "smooth" });
+    }
+    setMobileMenuOpen(false);
+  };
 
   return (
     <header
@@ -40,24 +56,24 @@ const Navbar: React.FC = () => {
 
         {/* Desktop Navigation */}
         <nav className="hidden md:flex items-center space-x-8">
-          <a
-            href="#features"
+          <button
+            onClick={() => scrollToSection("features")}
             className="text-sm font-medium text-gray-700 hover:text-health-600 transition-colors"
           >
             Features
-          </a>
-          <a
-            href="#benefits"
+          </button>
+          <button
+            onClick={() => scrollToSection("benefits")}
             className="text-sm font-medium text-gray-700 hover:text-health-600 transition-colors"
           >
             Benefits
-          </a>
-          <a
-            href="#pricing"
+          </button>
+          <button
+            onClick={() => scrollToSection("pricing")}
             className="text-sm font-medium text-gray-700 hover:text-health-600 transition-colors"
           >
             Pricing
-          </a>
+          </button>
           <Link to="/contact">
             <Button
               className="bg-health-600 hover:bg-health-700 text-white rounded-full px-6"
@@ -79,27 +95,24 @@ const Navbar: React.FC = () => {
       {/* Mobile Navigation */}
       {mobileMenuOpen && (
         <nav className="md:hidden bg-white absolute top-full left-0 right-0 p-4 shadow-md flex flex-col space-y-4 animate-fade-in">
-          <a
-            href="#features"
+          <button
+            onClick={() => scrollToSection("features")}
             className="text-gray-700 hover:text-health-600 transition-colors py-2 px-4"
-            onClick={() => setMobileMenuOpen(false)}
           >
             Features
-          </a>
-          <a
-            href="#benefits"
+          </button>
+          <button
+            onClick={() => scrollToSection("benefits")}
             className="text-gray-700 hover:text-health-600 transition-colors py-2 px-4"
-            onClick={() => setMobileMenuOpen(false)}
           >
             Benefits
-          </a>
-          <a
-            href="#pricing"
+          </button>
+          <button
+            onClick={() => scrollToSection("pricing")}
             className="text-gray-700 hover:text-health-600 transition-colors py-2 px-4"
-            onClick={() => setMobileMenuOpen(false)}
           >
             Pricing
-          </a>
+          </button>
           <Link to="/contact" onClick={() => setMobileMenuOpen(false)}>
             <Button
               className="bg-health-600 hover:bg-health-700 text-white w-full"
