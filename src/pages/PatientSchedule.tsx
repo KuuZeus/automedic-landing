@@ -25,6 +25,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Calendar, Clock, Filter, Plus, User, Home, Calendar as CalendarIcon } from "lucide-react";
+import ReviewDateModal from "@/components/ReviewDateModal";
 
 interface HospitalOption {
   id: string;
@@ -43,6 +44,10 @@ const PatientSchedule = () => {
   const [userHospital, setUserHospital] = useState<string | null>(null);
   const [userClinic, setUserClinic] = useState<string | null>(null);
   const [userHospitalId, setUserHospitalId] = useState<string | null>(null);
+
+  // Review Date Modal state
+  const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
+  const [selectedAppointmentId, setSelectedAppointmentId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!loading) {
@@ -136,10 +141,16 @@ const PatientSchedule = () => {
         query = query.lt("date", today);
       }
 
+      // Filter by hospital if the user is not a super_admin
       if (selectedHospital) {
         query = query.eq("hospital", selectedHospital);
       } else if (userHospital && !isRoleAllowed(['super_admin'])) {
         query = query.eq("hospital", userHospital);
+      }
+      
+      // If user is an appointment manager, only show appointments for their clinic
+      if (userRole === 'appointment_manager' && userClinic) {
+        query = query.eq("clinic", userClinic);
       }
 
       const { data, error } = await query;
@@ -154,6 +165,46 @@ const PatientSchedule = () => {
       toast.error("Failed to load appointments");
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleStatusChange = (appointmentId: string, status: string) => {
+    if (status === "completed") {
+      setSelectedAppointmentId(appointmentId);
+      setIsReviewModalOpen(true);
+    } else {
+      markAppointmentStatus(appointmentId, status);
+    }
+  };
+
+  const handleSaveReviewDate = async (reviewDate: string) => {
+    if (!selectedAppointmentId) return;
+    
+    try {
+      // First mark the appointment as completed
+      await markAppointmentStatus(selectedAppointmentId, "completed");
+      
+      // Then update the next review date
+      const { error } = await supabase
+        .from("appointments")
+        .update({ next_review_date: reviewDate })
+        .eq("id", selectedAppointmentId);
+        
+      if (error) throw error;
+      
+      toast.success("Appointment completed and next review scheduled");
+      
+      // Update the local state
+      setAppointments(appointments.map(appointment => 
+        appointment.id === selectedAppointmentId 
+          ? { ...appointment, status: "completed", next_review_date: reviewDate }
+          : appointment
+      ));
+      
+    } catch (error: any) {
+      toast.error(error.message || "Failed to save review date");
+    } finally {
+      setSelectedAppointmentId(null);
     }
   };
 
@@ -349,6 +400,7 @@ const PatientSchedule = () => {
                     <TableHead>Patient</TableHead>
                     <TableHead>Date</TableHead>
                     <TableHead>Time</TableHead>
+                    <TableHead>Purpose</TableHead>
                     <TableHead>Specialty</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
@@ -362,6 +414,7 @@ const PatientSchedule = () => {
                       </TableCell>
                       <TableCell>{formatDate(appointment.date)}</TableCell>
                       <TableCell>{formatTime(appointment.time)}</TableCell>
+                      <TableCell>{appointment.purpose || "Not specified"}</TableCell>
                       <TableCell>{appointment.specialty}</TableCell>
                       <TableCell>
                         <span
@@ -378,21 +431,21 @@ const PatientSchedule = () => {
                             <Button
                               variant="outline"
                               size="sm"
-                              onClick={() => markAppointmentStatus(appointment.id, "completed")}
+                              onClick={() => handleStatusChange(appointment.id, "completed")}
                             >
                               Complete
                             </Button>
                             <Button
                               variant="outline"
                               size="sm"
-                              onClick={() => markAppointmentStatus(appointment.id, "no-show")}
+                              onClick={() => handleStatusChange(appointment.id, "no-show")}
                             >
                               No Show
                             </Button>
                             <Button
                               variant="outline"
                               size="sm"
-                              onClick={() => markAppointmentStatus(appointment.id, "cancelled")}
+                              onClick={() => handleStatusChange(appointment.id, "cancelled")}
                             >
                               Cancel
                             </Button>
@@ -407,6 +460,15 @@ const PatientSchedule = () => {
           </div>
         )}
       </div>
+      
+      {/* Review Date Modal */}
+      <ReviewDateModal 
+        isOpen={isReviewModalOpen}
+        onClose={() => setIsReviewModalOpen(false)}
+        onSave={handleSaveReviewDate}
+        appointmentId={selectedAppointmentId || ""}
+      />
+      
       <Footer />
     </div>
   );
