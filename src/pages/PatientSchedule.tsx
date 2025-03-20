@@ -58,13 +58,16 @@ const PatientSchedule = () => {
     }
   }, [user, loading, userRole, navigate]);
 
+  // Get the actual boolean value instead of the function
+  const canManageAppointmentsValue = canManageAppointments ? canManageAppointments() : false;
+
   return (
     <div className="min-h-screen flex flex-col">
       <AuthNav />
       <div className="flex-1 container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex justify-between items-center mb-4">
           <h1 className="text-2xl font-bold">Patient Appointments</h1>
-          {canManageAppointments && (
+          {canManageAppointmentsValue && (
             <Button onClick={() => navigate("/new-appointment")}>
               <Plus className="h-4 w-4 mr-2" /> New Appointment
             </Button>
@@ -93,7 +96,7 @@ const PatientSchedule = () => {
         <AppointmentTable
           appointments={appointments}
           isLoading={isLoading}
-          canManageAppointments={canManageAppointments || false}
+          canManageAppointments={canManageAppointmentsValue}
           handleStatusChange={handleStatusChange}
           navigate={navigate}
           statusFilter={statusFilter}
