@@ -3,7 +3,6 @@ import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import AuthNav from "@/components/AuthNav";
-import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { toast } from "sonner";
@@ -114,8 +113,6 @@ const PatientSchedule = () => {
         onSave={handleSaveReviewDate}
         appointmentId={selectedAppointmentId || ""}
       />
-      
-      <Footer />
     </div>
   );
 };
