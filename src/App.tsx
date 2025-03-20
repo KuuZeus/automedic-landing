@@ -16,6 +16,7 @@ import Platform from "./pages/Platform";
 import ContactForm from "./pages/ContactForm";
 import Users from "./pages/Users";
 import Hospitals from "./pages/Hospitals";
+import AuditLogViewer from "./components/AuditLogViewer";
 
 const queryClient = new QueryClient();
 
@@ -37,6 +38,7 @@ const App = () => (
             <Route path="/contact" element={<ContactForm />} />
             <Route path="/users" element={<Users />} />
             <Route path="/hospitals" element={<Hospitals />} />
+            <Route path="/audit-logs" element={<AuditLogViewer />} />
             {/* Redirect /user-profile to /dashboard */}
             <Route path="/user-profile" element={<Navigate to="/dashboard" replace />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

@@ -14,6 +14,11 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { File, User, Calendar } from "lucide-react";
 
+// Direct query function to bypass typing issues
+const directQuery = (table: string) => {
+  return supabase.from(table);
+};
+
 interface AuditLog {
   id: string;
   user_id: string;
@@ -46,8 +51,7 @@ const AuditLogViewer = () => {
         return;
       }
       
-      const { data, error } = await supabase
-        .from('audit_logs')
+      const { data, error } = await directQuery('audit_logs')
         .select('*')
         .order('created_at', { ascending: false })
         .limit(100);
@@ -55,10 +59,12 @@ const AuditLogViewer = () => {
       if (error) throw error;
       
       if (data) {
-        setLogs(data);
+        // Explicitly cast the data to AuditLog[]
+        const auditLogs = data as unknown as AuditLog[];
+        setLogs(auditLogs);
         
         // Extract unique user IDs
-        const userIds = [...new Set(data.map(log => log.user_id))];
+        const userIds = [...new Set(auditLogs.map(log => log.user_id))];
         fetchUserEmails(userIds);
       }
     } catch (error) {

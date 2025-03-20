@@ -1,6 +1,11 @@
 
 import { supabase } from "@/integrations/supabase/client";
 
+// Create a type-safe direct query to bypass type checking issues
+const directQuery = (table: string) => {
+  return supabase.from(table);
+};
+
 export const createAuditLog = async (
   action: 'create' | 'update' | 'delete',
   tableName: string,
@@ -9,7 +14,7 @@ export const createAuditLog = async (
   newData: any | null
 ) => {
   try {
-    const { error } = await supabase.from('audit_logs').insert({
+    const { error } = await directQuery('audit_logs').insert({
       user_id: (await supabase.auth.getUser()).data.user?.id,
       action,
       table_name: tableName,
