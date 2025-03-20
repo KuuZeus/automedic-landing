@@ -61,18 +61,7 @@ export const useAppointmentStatus = (
     try {
       console.log("Marking appointment status in DB:", appointmentId, status);
       
-      // Get DB-compatible status based on the database constraints
-      // The database expects: 'scheduled', 'completed', 'cancelled', 'no-show'
-      let dbStatus = '';
-      if (status === "attended") dbStatus = "completed";
-      else if (status === "pending") dbStatus = "scheduled";
-      else if (status === "missed") dbStatus = "no-show";
-      else if (status === "cancelled") dbStatus = "cancelled";
-      // Add fallback for unexpected values
-      else dbStatus = status.toLowerCase();
-      
-      console.log("DB status to use:", dbStatus);
-      
+      // Get the appointment's current status before updating
       const { data: oldData, error: fetchError } = await supabase
         .from("appointments")
         .select("*")
@@ -81,6 +70,30 @@ export const useAppointmentStatus = (
       
       if (fetchError) throw fetchError;
       
+      // Important: Map UI-friendly status values to database-accepted values
+      // Based on database constraint: status must be 'scheduled', 'completed', 'cancelled', or 'no-show'
+      let dbStatus = '';
+      switch (status) {
+        case "attended":
+          dbStatus = "completed";
+          break;
+        case "pending":
+          dbStatus = "scheduled";
+          break;
+        case "missed":
+          dbStatus = "no-show";
+          break;
+        case "cancelled":
+          dbStatus = "cancelled";
+          break;
+        default:
+          // Fallback to the original status if unknown
+          dbStatus = status;
+      }
+      
+      console.log("DB status to use:", dbStatus);
+      
+      // Update the appointment with the database-compatible status
       const { error } = await supabase
         .from("appointments")
         .update({ status: dbStatus })
@@ -91,12 +104,11 @@ export const useAppointmentStatus = (
         throw error;
       }
 
-      // Update local state immediately for better UX
-      // Use consistent display status values
+      // Update local state using the UI-friendly status
       setAppointments((prevAppointments) =>
         prevAppointments.map((appointment) =>
           appointment.id === appointmentId
-            ? { ...appointment, status: status }
+            ? { ...appointment, status }
             : appointment
         )
       );
