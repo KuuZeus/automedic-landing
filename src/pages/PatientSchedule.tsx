@@ -19,9 +19,6 @@ const PatientSchedule = () => {
   
   // Get hospital and clinic info
   const { 
-    userHospital, 
-    userClinic, 
-    userHospitalId,
     userHospitalName, 
     userClinicName 
   } = useHospitalInfo(user?.id);
@@ -44,7 +41,7 @@ const PatientSchedule = () => {
     handleStatusChange,
     handleSaveReviewDate,
     isRoleAllowed,
-  } = useAppointments(userRole, userHospital, userClinic);
+  } = useAppointments(userRole, userHospitalName, userClinicName);
 
   useEffect(() => {
     if (!loading) {
@@ -73,7 +70,7 @@ const PatientSchedule = () => {
           )}
         </div>
         
-        {/* Hospital and Clinic Info */}
+        {/* Hospital and Clinic Info - Prominently displayed at the top */}
         <HospitalClinicInfo 
           userHospitalName={userHospitalName} 
           userClinicName={userClinicName} 
