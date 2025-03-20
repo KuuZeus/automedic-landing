@@ -31,10 +31,16 @@ const formSchema = z.object({
   password: z.string().min(6, { message: "Password must be at least 6 characters" }),
   firstName: z.string().min(1, { message: "First name is required" }),
   lastName: z.string().min(1, { message: "Last name is required" }),
-  role: z.enum(['super_admin', 'hospital_admin', 'appointment_manager', 'analytics_viewer'] as const),
+  role: z.enum(['hospital_admin', 'appointment_manager'] as const),
+  hospital: z.string().min(1, { message: "Hospital is required" }),
+  clinic: z.string().optional().refine(
+    (val) => {
+      // Only required if role is appointment_manager
+      return true;
+    },
+    { message: "Clinic is required for Appointment Managers" }
+  ),
   specialty: z.string().optional(),
-  clinic: z.string().optional(),
-  hospital: z.string().optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -52,11 +58,15 @@ const SignUp = () => {
       firstName: "",
       lastName: "",
       role: "appointment_manager", // Default role
-      specialty: "",
-      clinic: "",
       hospital: "",
+      clinic: "",
+      specialty: "",
     },
+    mode: "onChange",
   });
+
+  // Watch the role field to conditionally display fields
+  const selectedRole = form.watch("role");
 
   const onSubmit = async (data: FormValues) => {
     setIsLoading(true);
@@ -173,38 +183,10 @@ const SignUp = () => {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="super_admin">System Administrator</SelectItem>
                         <SelectItem value="hospital_admin">Hospital Administrator</SelectItem>
                         <SelectItem value="appointment_manager">Appointment Manager</SelectItem>
-                        <SelectItem value="analytics_viewer">Analytics Viewer</SelectItem>
                       </SelectContent>
                     </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="specialty"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Specialty (optional)</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Cardiology" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="clinic"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Clinic (optional)</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Health Clinic" {...field} />
-                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -214,9 +196,37 @@ const SignUp = () => {
                 name="hospital"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Hospital (optional)</FormLabel>
+                    <FormLabel>Hospital</FormLabel>
                     <FormControl>
-                      <Input placeholder="City Hospital" {...field} />
+                      <Input placeholder="City General Hospital" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              {selectedRole === "appointment_manager" && (
+                <FormField
+                  control={form.control}
+                  name="clinic"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Clinic</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Cardiology Clinic" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
+              <FormField
+                control={form.control}
+                name="specialty"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Specialty (optional)</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Cardiology" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
