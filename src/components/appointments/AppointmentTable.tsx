@@ -32,15 +32,15 @@ const AppointmentTable = ({
   dateRange,
 }: AppointmentTableProps) => {
   const getStatusBadgeClass = (status: string) => {
-    switch (status) {
-      case "scheduled":
-        return "bg-blue-100 text-blue-800";
-      case "completed":
+    switch (status.toLowerCase()) {
+      case "attended":
         return "bg-green-100 text-green-800";
-      case "cancelled":
-        return "bg-red-100 text-red-800";
-      case "no-show":
+      case "pending":
+        return "bg-blue-100 text-blue-800";
+      case "missed":
         return "bg-yellow-100 text-yellow-800";
+      case "cancel":
+        return "bg-red-100 text-red-800";
       default:
         return "bg-gray-100 text-gray-800";
     }
@@ -130,26 +130,26 @@ const AppointmentTable = ({
                   </span>
                 </TableCell>
                 <TableCell className="text-right">
-                  {canManageAppointments && appointment.status === "scheduled" && (
+                  {canManageAppointments && appointment.status.toLowerCase() === "pending" && (
                     <div className="flex justify-end gap-2">
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => handleStatusChange(appointment.id, "completed")}
+                        onClick={() => handleStatusChange(appointment.id, "Attended")}
                       >
-                        Complete
+                        Attended
                       </Button>
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => handleStatusChange(appointment.id, "no-show")}
+                        onClick={() => handleStatusChange(appointment.id, "Missed")}
                       >
-                        No Show
+                        Missed
                       </Button>
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => handleStatusChange(appointment.id, "cancelled")}
+                        onClick={() => handleStatusChange(appointment.id, "Cancel")}
                       >
                         Cancel
                       </Button>

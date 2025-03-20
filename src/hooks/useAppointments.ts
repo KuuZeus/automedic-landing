@@ -90,7 +90,18 @@ export const useAppointments = (userRole: string | null, userHospital: string | 
 
       if (data) {
         console.log("Fetched appointments:", data.length);
-        setAppointments(data);
+        
+        // Convert status to new format if needed
+        const updatedData = data.map(appointment => {
+          const status = appointment.status.toLowerCase();
+          if (status === "scheduled") return { ...appointment, status: "Pending" };
+          if (status === "completed") return { ...appointment, status: "Attended" };
+          if (status === "no-show") return { ...appointment, status: "Missed" };
+          if (status === "cancelled") return { ...appointment, status: "Cancel" };
+          return appointment;
+        });
+        
+        setAppointments(updatedData);
       }
     } catch (error) {
       console.error("Error fetching appointments:", error);
@@ -102,7 +113,7 @@ export const useAppointments = (userRole: string | null, userHospital: string | 
 
   const handleStatusChange = (appointmentId: string, status: string) => {
     console.log("Changing status for appointment:", appointmentId, "to:", status);
-    if (status === "completed") {
+    if (status === "Attended") {
       setSelectedAppointmentId(appointmentId);
       setIsReviewModalOpen(true);
     } else {
@@ -116,8 +127,8 @@ export const useAppointments = (userRole: string | null, userHospital: string | 
     try {
       console.log("Saving review date:", reviewDate, "for appointment:", selectedAppointmentId);
       
-      // First mark the appointment as completed
-      await markAppointmentStatus(selectedAppointmentId, "completed");
+      // First mark the appointment as completed (now "Attended")
+      await markAppointmentStatus(selectedAppointmentId, "Attended");
       
       // Then update the next review date
       const { error } = await supabase
@@ -132,7 +143,7 @@ export const useAppointments = (userRole: string | null, userHospital: string | 
       // Update the local state
       setAppointments(appointments.map(appointment => 
         appointment.id === selectedAppointmentId 
-          ? { ...appointment, status: "completed", next_review_date: reviewDate }
+          ? { ...appointment, status: "Attended", next_review_date: reviewDate }
           : appointment
       ));
       
@@ -149,6 +160,13 @@ export const useAppointments = (userRole: string | null, userHospital: string | 
     try {
       console.log("Marking appointment status in DB:", appointmentId, status);
       
+      // Get DB-compatible status
+      let dbStatus = status;
+      if (status === "Attended") dbStatus = "completed";
+      if (status === "Pending") dbStatus = "scheduled";
+      if (status === "Missed") dbStatus = "no-show";
+      if (status === "Cancel") dbStatus = "cancelled";
+      
       const { data: oldData, error: fetchError } = await supabase
         .from("appointments")
         .select("*")
@@ -159,7 +177,7 @@ export const useAppointments = (userRole: string | null, userHospital: string | 
       
       const { error } = await supabase
         .from("appointments")
-        .update({ status })
+        .update({ status: dbStatus })
         .eq("id", appointmentId);
 
       if (error) throw error;
@@ -186,7 +204,7 @@ export const useAppointments = (userRole: string | null, userHospital: string | 
           'appointments',
           appointmentId,
           { status: oldData.status },
-          { status }
+          { status: dbStatus }
         );
       }
 
