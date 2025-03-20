@@ -1,4 +1,5 @@
-import { useEffect } from "react";
+
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import AuthNav from "@/components/AuthNav";
@@ -231,5 +232,184 @@ const PatientSchedule = () => {
 
   const formatTime = (timeString: string) => {
     try {
-      [
+      const [hours, minutes] = timeString.split(':');
+      const hour = parseInt(hours, 10);
+      const ampm = hour >= 12 ? 'PM' : 'AM';
+      const formattedHour = hour % 12 || 12;
+      return `${formattedHour}:${minutes} ${ampm}`;
+    } catch (e) {
+      return timeString;
+    }
+  };
 
+  const isRoleAllowed = (allowedRoles: string[]) => {
+    return allowedRoles.includes(userRole || '');
+  };
+
+  return (
+    <div className="min-h-screen flex flex-col">
+      <AuthNav />
+      <div className="flex-1 container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="flex justify-between items-center mb-8">
+          <h1 className="text-2xl font-bold">Patient Appointments</h1>
+          {canManageAppointments && (
+            <Button onClick={() => navigate("/new-appointment")}>
+              <Plus className="h-4 w-4 mr-2" /> New Appointment
+            </Button>
+          )}
+        </div>
+
+        <div className="bg-white p-6 rounded-lg shadow mb-8">
+          <div className="flex flex-col lg:flex-row lg:items-end gap-4 mb-6">
+            <div className="flex-1">
+              <label htmlFor="status-filter" className="block text-sm font-medium text-gray-700 mb-1">
+                Status
+              </label>
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger id="status-filter" className="w-full">
+                  <SelectValue placeholder="Filter by status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Statuses</SelectItem>
+                  <SelectItem value="scheduled">Scheduled</SelectItem>
+                  <SelectItem value="completed">Completed</SelectItem>
+                  <SelectItem value="cancelled">Cancelled</SelectItem>
+                  <SelectItem value="no-show">No Show</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="flex-1">
+              <label htmlFor="date-filter" className="block text-sm font-medium text-gray-700 mb-1">
+                Date Range
+              </label>
+              <Select value={dateRange} onValueChange={setDateRange}>
+                <SelectTrigger id="date-filter" className="w-full">
+                  <SelectValue placeholder="Select date range" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="upcoming">Upcoming</SelectItem>
+                  <SelectItem value="today">Today</SelectItem>
+                  <SelectItem value="past">Past</SelectItem>
+                  <SelectItem value="all">All Dates</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {isRoleAllowed(['super_admin']) && (
+              <div className="flex-1">
+                <label htmlFor="hospital-filter" className="block text-sm font-medium text-gray-700 mb-1">
+                  Hospital
+                </label>
+                <Select value={selectedHospital || ""} onValueChange={setSelectedHospital}>
+                  <SelectTrigger id="hospital-filter" className="w-full">
+                    <SelectValue placeholder="All Hospitals" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">All Hospitals</SelectItem>
+                    {hospitals.map((hospital) => (
+                      <SelectItem key={hospital.id} value={hospital.id}>
+                        {hospital.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {isLoading ? (
+          <div className="flex justify-center items-center p-8">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-health-600"></div>
+          </div>
+        ) : appointments.length === 0 ? (
+          <div className="bg-white rounded-lg shadow p-8 text-center">
+            <CalendarIcon className="mx-auto h-12 w-12 text-gray-400" />
+            <h3 className="mt-2 text-lg font-medium text-gray-900">No appointments found</h3>
+            <p className="mt-1 text-sm text-gray-500">
+              {statusFilter !== "all" || dateRange !== "all"
+                ? "Try changing your filters to see more appointments."
+                : "Start by creating a new appointment."}
+            </p>
+            {canManageAppointments && (
+              <div className="mt-6">
+                <Button onClick={() => navigate("/new-appointment")}>
+                  <Plus className="h-4 w-4 mr-2" /> New Appointment
+                </Button>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="bg-white rounded-lg shadow overflow-hidden">
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Patient</TableHead>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Time</TableHead>
+                    <TableHead>Specialty</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {appointments.map((appointment) => (
+                    <TableRow key={appointment.id}>
+                      <TableCell className="font-medium">
+                        {appointment.patient_name}
+                      </TableCell>
+                      <TableCell>{formatDate(appointment.date)}</TableCell>
+                      <TableCell>{formatTime(appointment.time)}</TableCell>
+                      <TableCell>{appointment.specialty}</TableCell>
+                      <TableCell>
+                        <span
+                          className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusBadgeClass(
+                            appointment.status
+                          )}`}
+                        >
+                          {appointment.status}
+                        </span>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {canManageAppointments && appointment.status === "scheduled" && (
+                          <div className="flex justify-end gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => markAppointmentStatus(appointment.id, "completed")}
+                            >
+                              Complete
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => markAppointmentStatus(appointment.id, "no-show")}
+                            >
+                              No Show
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => markAppointmentStatus(appointment.id, "cancelled")}
+                            >
+                              Cancel
+                            </Button>
+                          </div>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </div>
+        )}
+      </div>
+      <Footer />
+    </div>
+  );
+};
+
+export default PatientSchedule;
