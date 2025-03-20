@@ -26,6 +26,7 @@ import {
 } from "@/components/ui/table";
 import { Calendar, Clock, Filter, Plus, User, Home, Calendar as CalendarIcon } from "lucide-react";
 import ReviewDateModal from "@/components/ReviewDateModal";
+import { createAuditLog } from "@/lib/auditLogService";
 
 interface HospitalOption {
   id: string;
@@ -169,6 +170,7 @@ const PatientSchedule = () => {
   };
 
   const handleStatusChange = (appointmentId: string, status: string) => {
+    console.log("Changing status for appointment:", appointmentId, "to:", status);
     if (status === "completed") {
       setSelectedAppointmentId(appointmentId);
       setIsReviewModalOpen(true);
@@ -204,12 +206,15 @@ const PatientSchedule = () => {
     } catch (error: any) {
       toast.error(error.message || "Failed to save review date");
     } finally {
+      setIsReviewModalOpen(false);
       setSelectedAppointmentId(null);
     }
   };
 
   const markAppointmentStatus = async (appointmentId: string, status: string) => {
     try {
+      console.log("Marking appointment status in DB:", appointmentId, status);
+      
       const { data: oldData, error: fetchError } = await supabase
         .from("appointments")
         .select("*")
@@ -225,6 +230,7 @@ const PatientSchedule = () => {
 
       if (error) throw error;
 
+      // Update local state immediately for better UX
       setAppointments((prevAppointments) =>
         prevAppointments.map((appointment) =>
           appointment.id === appointmentId
@@ -233,6 +239,7 @@ const PatientSchedule = () => {
         )
       );
 
+      // Fetch the updated appointment data to use in the audit log
       const { data: newData } = await supabase
         .from("appointments")
         .select("*")
@@ -240,20 +247,22 @@ const PatientSchedule = () => {
         .single();
         
       if (oldData && newData) {
-        await supabaseUntyped
-          .from('audit_logs')
-          .insert({
-            user_id: user?.id,
-            action: 'update',
-            table_name: 'appointments',
-            record_id: appointmentId,
-            old_data: { status: oldData.status },
-            new_data: { status }
-          });
+        await createAuditLog(
+          'update',
+          'appointments',
+          appointmentId,
+          { status: oldData.status },
+          { status }
+        );
       }
 
       toast.success(`Appointment marked as ${status}`);
+      
+      // Refresh appointments data to ensure we have the latest
+      fetchAppointments();
+      
     } catch (error: any) {
+      console.error("Error updating appointment status:", error);
       toast.error(error.message || "Failed to update appointment status");
     }
   };
@@ -415,7 +424,7 @@ const PatientSchedule = () => {
                       <TableCell>{formatDate(appointment.date)}</TableCell>
                       <TableCell>{formatTime(appointment.time)}</TableCell>
                       <TableCell>{appointment.purpose || "Not specified"}</TableCell>
-                      <TableCell>{appointment.specialty}</TableCell>
+                      <TableCell>{appointment.specialty || "-"}</TableCell>
                       <TableCell>
                         <span
                           className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusBadgeClass(
@@ -464,7 +473,10 @@ const PatientSchedule = () => {
       {/* Review Date Modal */}
       <ReviewDateModal 
         isOpen={isReviewModalOpen}
-        onClose={() => setIsReviewModalOpen(false)}
+        onClose={() => {
+          setIsReviewModalOpen(false);
+          setSelectedAppointmentId(null);
+        }}
         onSave={handleSaveReviewDate}
         appointmentId={selectedAppointmentId || ""}
       />
