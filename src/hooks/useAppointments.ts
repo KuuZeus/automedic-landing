@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { supabaseUntyped } from "@/lib/supabaseTypes";
-import { format } from "date-fns";
+import { format, isPast, parseISO } from "date-fns";
 import { toast } from "sonner";
 import { createAuditLog } from "@/lib/auditLogService";
 
@@ -46,6 +46,48 @@ export const useAppointments = (userRole: string | null, userHospital: string | 
       }
     } catch (error) {
       console.error('Error fetching hospitals:', error);
+    }
+  };
+
+  // Check for overdue appointments and update their status
+  const updateOverdueAppointments = async (appointmentsData: any[]) => {
+    const today = new Date();
+    const overdueAppointments = appointmentsData.filter(
+      app => app.status.toLowerCase() === 'pending' && isPast(parseISO(app.date)) && app.date !== format(today, 'yyyy-MM-dd')
+    );
+    
+    if (overdueAppointments.length > 0) {
+      console.log(`Found ${overdueAppointments.length} overdue appointments`);
+      
+      for (const appointment of overdueAppointments) {
+        try {
+          console.log(`Marking appointment ${appointment.id} as missed`);
+          
+          const { error } = await supabase
+            .from("appointments")
+            .update({ status: "no-show" })
+            .eq("id", appointment.id);
+            
+          if (error) throw error;
+          
+          // Update local state
+          setAppointments(prev => 
+            prev.map(app => 
+              app.id === appointment.id ? { ...app, status: "Missed" } : app
+            )
+          );
+          
+          await createAuditLog(
+            'update',
+            'appointments',
+            appointment.id,
+            { status: appointment.status },
+            { status: 'no-show' }
+          );
+        } catch (error) {
+          console.error(`Error updating overdue appointment ${appointment.id}:`, error);
+        }
+      }
     }
   };
 
@@ -100,6 +142,9 @@ export const useAppointments = (userRole: string | null, userHospital: string | 
           if (status === "cancelled") return { ...appointment, status: "Cancel" };
           return appointment;
         });
+        
+        // Update overdue appointments in the background
+        updateOverdueAppointments(updatedData);
         
         setAppointments(updatedData);
       }
@@ -227,6 +272,17 @@ export const useAppointments = (userRole: string | null, userHospital: string | 
   useEffect(() => {
     fetchAppointments();
   }, [statusFilter, dateRange, selectedHospital, userHospital, userClinic]);
+
+  // Add an interval to regularly check for overdue appointments
+  useEffect(() => {
+    const checkOverdueInterval = setInterval(() => {
+      if (appointments.length > 0) {
+        updateOverdueAppointments(appointments);
+      }
+    }, 60000); // Check every minute
+    
+    return () => clearInterval(checkOverdueInterval);
+  }, [appointments]);
 
   return {
     appointments,

@@ -10,7 +10,14 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Calendar as CalendarIcon, Plus } from "lucide-react";
-import { format } from "date-fns";
+import { format, isPast, parseISO } from "date-fns";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface AppointmentTableProps {
   appointments: any[];
@@ -132,27 +139,18 @@ const AppointmentTable = ({
                 <TableCell className="text-right">
                   {canManageAppointments && appointment.status.toLowerCase() === "pending" && (
                     <div className="flex justify-end gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleStatusChange(appointment.id, "Attended")}
+                      <Select
+                        onValueChange={(value) => handleStatusChange(appointment.id, value)}
+                        defaultValue=""
                       >
-                        Attended
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleStatusChange(appointment.id, "Missed")}
-                      >
-                        Missed
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleStatusChange(appointment.id, "Cancel")}
-                      >
-                        Cancel
-                      </Button>
+                        <SelectTrigger className="w-[140px]">
+                          <SelectValue placeholder="Update status" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Attended">Attended</SelectItem>
+                          <SelectItem value="Cancel">Cancel</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
                   )}
                 </TableCell>
