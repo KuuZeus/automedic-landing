@@ -14,7 +14,7 @@ export const useAppointmentStatus = (
 
   const handleStatusChange = (appointmentId: string, status: string) => {
     console.log("Changing status for appointment:", appointmentId, "to:", status);
-    if (status === "Attended") {
+    if (status === "attended") {
       setSelectedAppointmentId(appointmentId);
       setIsReviewModalOpen(true);
     } else {
@@ -28,8 +28,8 @@ export const useAppointmentStatus = (
     try {
       console.log("Saving review date:", reviewDate, "for appointment:", selectedAppointmentId);
       
-      // First mark the appointment as completed (now "Attended")
-      await markAppointmentStatus(selectedAppointmentId, "Attended");
+      // First mark the appointment as completed (now "attended")
+      await markAppointmentStatus(selectedAppointmentId, "attended");
       
       // Then update the next review date
       const { error } = await supabase
@@ -64,10 +64,10 @@ export const useAppointmentStatus = (
       // Get DB-compatible status based on the database constraints
       // The database expects: 'scheduled', 'completed', 'cancelled', 'no-show'
       let dbStatus = '';
-      if (status === "Attended") dbStatus = "completed";
-      else if (status === "Pending") dbStatus = "scheduled";
-      else if (status === "Missed") dbStatus = "no-show";
-      else if (status === "cancelled" || status === "Cancel") dbStatus = "cancelled";
+      if (status === "attended") dbStatus = "completed";
+      else if (status === "pending") dbStatus = "scheduled";
+      else if (status === "missed") dbStatus = "no-show";
+      else if (status === "cancelled") dbStatus = "cancelled";
       // Add fallback for unexpected values
       else dbStatus = status.toLowerCase();
       
@@ -92,8 +92,8 @@ export const useAppointmentStatus = (
       }
 
       // Update local state immediately for better UX
-      // Use the display status ("Cancel", "Attended", etc.)
-      const displayStatus = status === "cancelled" ? "Cancel" : status;
+      // Use consistent display status values
+      const displayStatus = status.charAt(0).toUpperCase() + status.slice(1);
       setAppointments((prevAppointments) =>
         prevAppointments.map((appointment) =>
           appointment.id === appointmentId

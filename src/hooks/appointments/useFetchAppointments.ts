@@ -58,13 +58,13 @@ export const useFetchAppointments = (
       if (data) {
         console.log("Fetched appointments:", data.length);
         
-        // Convert status to new format if needed
+        // Convert status to consistent format
         const updatedData = data.map(appointment => {
           const status = appointment.status.toLowerCase();
           if (status === "scheduled") return { ...appointment, status: "Pending" };
           if (status === "completed") return { ...appointment, status: "Attended" };
           if (status === "no-show") return { ...appointment, status: "Missed" };
-          if (status === "cancelled") return { ...appointment, status: "Cancel" };
+          if (status === "cancelled") return { ...appointment, status: "Cancelled" };
           return appointment;
         });
         

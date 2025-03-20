@@ -46,7 +46,7 @@ const AppointmentTable = ({
         return "bg-blue-100 text-blue-800";
       case "missed":
         return "bg-yellow-100 text-yellow-800";
-      case "cancel":
+      case "cancelled":
         return "bg-red-100 text-red-800";
       default:
         return "bg-gray-100 text-gray-800";
@@ -147,7 +147,8 @@ const AppointmentTable = ({
                           <SelectValue placeholder="Update status" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="Attended">Attended</SelectItem>
+                          <SelectItem value="attended">Attended</SelectItem>
+                          <SelectItem value="missed">Missed</SelectItem>
                           <SelectItem value="cancelled">Cancelled</SelectItem>
                         </SelectContent>
                       </Select>
