@@ -36,6 +36,7 @@ const SignIn = () => {
       } else if (userRole === 'super_admin') {
         navigate("/hospitals");
       } else {
+        // Hospital admins and appointment managers go to schedule page
         navigate("/patient-schedule");
       }
     }

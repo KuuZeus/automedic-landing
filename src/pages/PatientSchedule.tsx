@@ -1,5 +1,4 @@
-
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import AuthNav from "@/components/AuthNav";
@@ -32,7 +31,7 @@ interface HospitalOption {
 }
 
 const PatientSchedule = () => {
-  const { user, loading, userRole, isRoleAllowed } = useAuth();
+  const { user, loading, userRole, canManageAppointments } = useAuth();
   const navigate = useNavigate();
   const [appointments, setAppointments] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -48,12 +47,14 @@ const PatientSchedule = () => {
     if (!loading) {
       if (!user) {
         navigate("/sign-in");
+      } else if (userRole === 'analytics_viewer') {
+        navigate("/dashboard");
+        toast.error("You don't have permission to access the appointments page");
       } else {
-        // Load user's hospital and clinic
         getUserHospitalInfo();
       }
     }
-  }, [user, loading, navigate]);
+  }, [user, loading, userRole, navigate]);
 
   useEffect(() => {
     if (user && !loading) {
@@ -75,7 +76,6 @@ const PatientSchedule = () => {
       if (data) {
         setUserHospital(data.hospital);
         setUserClinic(data.clinic);
-        // We'll set this to null for now until we update the profiles table
         setUserHospitalId(null);
       }
     } catch (error) {
@@ -100,7 +100,6 @@ const PatientSchedule = () => {
         
         setHospitals(hospitalOptions as HospitalOption[]);
         
-        // If user is not a super admin, and we have their hospital info, select it by default
         if (!isRoleAllowed(['super_admin']) && userHospital && !selectedHospital) {
           const found = hospitalOptions.find((h: any) => h.name === userHospital);
           if (found) {
@@ -123,12 +122,10 @@ const PatientSchedule = () => {
         .order("date", { ascending: false })
         .order("time", { ascending: true });
 
-      // Apply status filter if not "all"
       if (statusFilter !== "all") {
         query = query.eq("status", statusFilter);
       }
 
-      // Apply date filters
       const today = format(new Date(), "yyyy-MM-dd");
       if (dateRange === "today") {
         query = query.eq("date", today);
@@ -138,11 +135,9 @@ const PatientSchedule = () => {
         query = query.lt("date", today);
       }
 
-      // Apply hospital filter if a hospital is selected
       if (selectedHospital) {
         query = query.eq("hospital", selectedHospital);
       } else if (userHospital && !isRoleAllowed(['super_admin'])) {
-        // If user is not a super admin, filter by their hospital
         query = query.eq("hospital", userHospital);
       }
 
@@ -163,7 +158,6 @@ const PatientSchedule = () => {
 
   const markAppointmentStatus = async (appointmentId: string, status: string) => {
     try {
-      // Get the current appointment data
       const { data: oldData, error: fetchError } = await supabase
         .from("appointments")
         .select("*")
@@ -172,7 +166,6 @@ const PatientSchedule = () => {
       
       if (fetchError) throw fetchError;
       
-      // Update the appointment status
       const { error } = await supabase
         .from("appointments")
         .update({ status })
@@ -180,7 +173,6 @@ const PatientSchedule = () => {
 
       if (error) throw error;
 
-      // Update local state
       setAppointments((prevAppointments) =>
         prevAppointments.map((appointment) =>
           appointment.id === appointmentId
@@ -189,7 +181,6 @@ const PatientSchedule = () => {
         )
       );
 
-      // Create an audit log
       const { data: newData } = await supabase
         .from("appointments")
         .select("*")
@@ -240,246 +231,5 @@ const PatientSchedule = () => {
 
   const formatTime = (timeString: string) => {
     try {
-      // Assuming timeString is in format "HH:MM"
-      const [hours, minutes] = timeString.split(":");
-      const date = new Date();
-      date.setHours(parseInt(hours, 10));
-      date.setMinutes(parseInt(minutes, 10));
-      return format(date, "h:mm a");
-    } catch (e) {
-      return timeString;
-    }
-  };
+      [
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-health-600"></div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
-      <AuthNav />
-      <main className="container mx-auto px-4 py-8 max-w-6xl flex-grow">
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Patient Schedule</h1>
-              <p className="text-gray-600">Manage and view all patient appointments</p>
-            </div>
-            <div className="flex flex-col sm:flex-row gap-3">
-              <Button
-                onClick={() => navigate("/new-appointment")}
-                className="bg-health-600 hover:bg-health-700"
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                New Appointment
-              </Button>
-            </div>
-          </div>
-
-          <div className="flex flex-col md:flex-row gap-4 mb-6">
-            <div className="flex-1">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Status Filter
-              </label>
-              <Select
-                value={statusFilter}
-                onValueChange={setStatusFilter}
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Filter by status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Statuses</SelectItem>
-                  <SelectItem value="scheduled">Scheduled</SelectItem>
-                  <SelectItem value="completed">Completed</SelectItem>
-                  <SelectItem value="cancelled">Cancelled</SelectItem>
-                  <SelectItem value="no-show">No Show</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="flex-1">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Date Range
-              </label>
-              <Select
-                value={dateRange}
-                onValueChange={setDateRange}
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select date range" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Dates</SelectItem>
-                  <SelectItem value="today">Today</SelectItem>
-                  <SelectItem value="upcoming">Upcoming</SelectItem>
-                  <SelectItem value="past">Past</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {isRoleAllowed(['super_admin', 'hospital_admin']) && (
-              <div className="flex-1">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Hospital
-                </label>
-                <Select
-                  value={selectedHospital || ""}
-                  onValueChange={(value) => setSelectedHospital(value === "" ? null : value)}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select hospital" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="">All Hospitals</SelectItem>
-                    {hospitals.map((hospital) => (
-                      <SelectItem key={hospital.id} value={hospital.id}>
-                        {hospital.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
-          </div>
-
-          {isLoading ? (
-            <div className="text-center py-12">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-health-600 mx-auto"></div>
-              <p className="mt-4 text-gray-600">Loading appointments...</p>
-            </div>
-          ) : appointments.length === 0 ? (
-            <div className="text-center py-12 border rounded-md">
-              <CalendarIcon className="h-12 w-12 mx-auto text-gray-400 mb-4" />
-              <h3 className="text-lg font-medium text-gray-900">No appointments found</h3>
-              <p className="text-gray-500 mb-4">
-                There are no appointments matching your filters.
-              </p>
-              <Button
-                onClick={() => navigate("/new-appointment")}
-                className="bg-health-600 hover:bg-health-700"
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Schedule New Appointment
-              </Button>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Patient</TableHead>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Time</TableHead>
-                    <TableHead>Purpose</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {appointments.map((appointment) => (
-                    <TableRow key={appointment.id}>
-                      <TableCell>
-                        <div className="flex items-center">
-                          <User className="h-4 w-4 mr-2 text-gray-500" />
-                          <div>
-                            <div className="font-medium">{appointment.patient_name}</div>
-                            <div className="text-sm text-gray-500">{appointment.patient_id}</div>
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center">
-                          <Calendar className="h-4 w-4 mr-2 text-gray-500" />
-                          {formatDate(appointment.date)}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center">
-                          <Clock className="h-4 w-4 mr-2 text-gray-500" />
-                          {formatTime(appointment.time)}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="max-w-xs truncate" title={appointment.purpose}>
-                          {appointment.purpose}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <span
-                          className={`px-2 py-1 rounded-full text-xs ${getStatusBadgeClass(
-                            appointment.status
-                          )}`}
-                        >
-                          {appointment.status.charAt(0).toUpperCase() +
-                            appointment.status.slice(1)}
-                        </span>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex space-x-2">
-                          {appointment.status === "scheduled" && (
-                            <>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="h-8 text-green-600 border-green-200 hover:bg-green-50"
-                                onClick={() =>
-                                  markAppointmentStatus(appointment.id, "completed")
-                                }
-                              >
-                                Complete
-                              </Button>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="h-8 text-red-600 border-red-200 hover:bg-red-50"
-                                onClick={() =>
-                                  markAppointmentStatus(appointment.id, "cancelled")
-                                }
-                              >
-                                Cancel
-                              </Button>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="h-8 text-yellow-600 border-yellow-200 hover:bg-yellow-50"
-                                onClick={() =>
-                                  markAppointmentStatus(appointment.id, "no-show")
-                                }
-                              >
-                                No Show
-                              </Button>
-                            </>
-                          )}
-                          {appointment.status !== "scheduled" && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="h-8 text-blue-600 border-blue-200 hover:bg-blue-50"
-                              onClick={() =>
-                                markAppointmentStatus(appointment.id, "scheduled")
-                              }
-                            >
-                              Reschedule
-                            </Button>
-                          )}
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          )}
-        </div>
-      </main>
-      <Footer />
-    </div>
-  );
-};
-
-export default PatientSchedule;

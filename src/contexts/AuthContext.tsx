@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { supabaseUntyped } from "@/lib/supabaseTypes";
@@ -252,11 +253,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const canManageAppointments = () => {
+    // Both appointment managers and admins can manage appointments
     return userRole === 'super_admin' || userRole === 'hospital_admin' || userRole === 'appointment_manager';
   };
 
   const canViewAnalytics = () => {
-    return userRole === 'super_admin' || userRole === 'hospital_admin' || userRole === 'analytics_viewer';
+    // All roles can view analytics except specifically disallowed roles
+    return userRole !== null; // Everyone with a role can view analytics now
   };
 
   const canManageSettings = () => {
