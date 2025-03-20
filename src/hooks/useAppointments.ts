@@ -206,11 +206,13 @@ export const useAppointments = (userRole: string | null, userHospital: string | 
       console.log("Marking appointment status in DB:", appointmentId, status);
       
       // Get DB-compatible status
-      let dbStatus = status;
+      let dbStatus = status.toLowerCase();
       if (status === "Attended") dbStatus = "completed";
       if (status === "Pending") dbStatus = "scheduled";
       if (status === "Missed") dbStatus = "no-show";
-      if (status === "Cancel") dbStatus = "cancelled";
+      if (status === "cancelled") dbStatus = "cancelled";
+      
+      console.log("DB status to use:", dbStatus);
       
       const { data: oldData, error: fetchError } = await supabase
         .from("appointments")
@@ -225,7 +227,10 @@ export const useAppointments = (userRole: string | null, userHospital: string | 
         .update({ status: dbStatus })
         .eq("id", appointmentId);
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error details:", error);
+        throw error;
+      }
 
       // Update local state immediately for better UX
       setAppointments((prevAppointments) =>
