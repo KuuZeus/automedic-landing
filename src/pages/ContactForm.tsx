@@ -14,7 +14,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import Navbar from "@/components/Navbar";
-import Footer from "@/components/Footer";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -248,7 +247,6 @@ const ContactForm = () => {
           </div>
         </div>
       </div>
-      <Footer />
     </div>
   );
 };

@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { z } from "zod";
@@ -23,7 +22,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import Navbar from "@/components/Navbar";
-import Footer from "@/components/Footer";
 import { UserRole } from "@/contexts/AuthContext";
 
 const formSchema = z.object({
@@ -65,7 +63,6 @@ const SignUp = () => {
     mode: "onChange",
   });
 
-  // Watch the role field to conditionally display fields
   const selectedRole = form.watch("role");
 
   const onSubmit = async (data: FormValues) => {
@@ -79,7 +76,6 @@ const SignUp = () => {
         clinic: data.clinic,
         hospital: data.hospital,
       });
-      // Note: Navigation is handled in the signUp function
     } catch (error) {
       console.error("Sign-up error:", error);
     } finally {
@@ -243,7 +239,6 @@ const SignUp = () => {
           </Form>
         </div>
       </div>
-      <Footer />
     </div>
   );
 };

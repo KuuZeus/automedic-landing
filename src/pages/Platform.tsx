@@ -2,7 +2,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { ArrowLeft, LogIn, UserPlus } from "lucide-react";
-import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -71,7 +70,6 @@ const Platform = () => {
           </div>
         </div>
       </main>
-      <Footer />
     </div>
   );
 };
