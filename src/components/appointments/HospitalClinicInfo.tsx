@@ -13,9 +13,9 @@ const HospitalClinicInfo = ({ userHospitalName, userClinicName }: HospitalClinic
   }
   
   return (
-    <div className="bg-blue-50 p-4 rounded-lg mb-6 flex items-center">
+    <div className="bg-blue-50 p-4 rounded-lg mb-6 flex flex-col sm:flex-row items-start sm:items-center">
       {userHospitalName && (
-        <div className="flex items-center mr-6">
+        <div className="flex items-center mb-2 sm:mb-0 sm:mr-6">
           <Building className="h-5 w-5 text-health-600 mr-2" />
           <span className="font-medium">Hospital: {userHospitalName}</span>
         </div>
