@@ -1,14 +1,9 @@
-
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { supabaseUntyped } from "@/lib/supabaseTypes";
 import { useNavigate } from "react-router-dom";
 import { Session, User } from "@supabase/supabase-js";
 import { toast } from "sonner";
-
-// Create a direct query function to bypass type checking issues
-const directQuery = (table: string) => {
-  return supabase.from(table);
-};
 
 export type UserRole = 'super_admin' | 'hospital_admin' | 'appointment_manager' | 'analytics_viewer';
 
@@ -237,20 +232,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       if (!user) return;
       
-      await directQuery('audit_logs').insert({
-        user_id: user.id,
-        action,
-        table_name: tableName,
-        record_id: recordId,
-        old_data: oldData,
-        new_data: newData
-      });
+      await supabaseUntyped
+        .from('audit_logs')
+        .insert({
+          user_id: user.id,
+          action,
+          table_name: tableName,
+          record_id: recordId,
+          old_data: oldData,
+          new_data: newData
+        });
     } catch (error) {
       console.error('Error creating audit log:', error);
     }
   };
 
-  // Permission helper functions
   const canManageUsers = () => {
     return userRole === 'super_admin' || userRole === 'hospital_admin';
   };

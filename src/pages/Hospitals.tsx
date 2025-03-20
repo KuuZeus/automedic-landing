@@ -1,10 +1,11 @@
-
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import AuthNav from "@/components/AuthNav";
 import Footer from "@/components/Footer";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { supabaseUntyped } from "@/lib/supabaseTypes";
+import { Hospital } from "@/lib/supabaseTypes";
 import { toast } from "sonner";
 import { 
   Table, 
@@ -28,19 +29,6 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Building, Users, Plus, Pencil } from "lucide-react";
-
-// Create a direct query function to bypass type checking issues
-const directQuery = (table: string) => {
-  return supabase.from(table);
-};
-
-interface Hospital {
-  id: string;
-  name: string;
-  created_at: string;
-  updated_at: string;
-  user_count?: number;
-}
 
 const HospitalsPage = () => {
   const { userRole, user, loading: authLoading } = useAuth();
@@ -67,7 +55,8 @@ const HospitalsPage = () => {
     try {
       setLoading(true);
       
-      const { data, error } = await directQuery('hospitals')
+      const { data, error } = await supabaseUntyped
+        .from('hospitals')
         .select('*')
         .order('name');
         
@@ -97,7 +86,8 @@ const HospitalsPage = () => {
         return;
       }
       
-      const { data, error } = await directQuery('hospitals')
+      const { data, error } = await supabaseUntyped
+        .from('hospitals')
         .insert({ name: newHospitalName.trim() })
         .select();
         
@@ -109,7 +99,7 @@ const HospitalsPage = () => {
       
       // Add the new hospital to the state
       if (data) {
-        setHospitals(prev => [...prev, { ...data[0], user_count: 0 }] as Hospital[]);
+        setHospitals(prev => [...prev, { ...(data[0] as Hospital), user_count: 0 }]);
       }
     } catch (error: any) {
       toast.error(error.message || 'Failed to add hospital');

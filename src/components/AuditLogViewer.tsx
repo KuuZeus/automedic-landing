@@ -1,6 +1,4 @@
-
 import React, { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { format } from "date-fns";
 import {
@@ -13,23 +11,8 @@ import {
 } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
 import { File, User, Calendar } from "lucide-react";
-
-// Direct query function to bypass typing issues
-const directQuery = (table: string) => {
-  return supabase.from(table);
-};
-
-interface AuditLog {
-  id: string;
-  user_id: string;
-  action: string;
-  table_name: string;
-  record_id: string;
-  old_data: any;
-  new_data: any;
-  created_at: string;
-  user_email?: string;
-}
+import { supabaseUntyped } from "@/lib/supabaseTypes";
+import type { AuditLog } from "@/lib/supabaseTypes";
 
 const AuditLogViewer = () => {
   const { userRole } = useAuth();
@@ -51,7 +34,8 @@ const AuditLogViewer = () => {
         return;
       }
       
-      const { data, error } = await directQuery('audit_logs')
+      const { data, error } = await supabaseUntyped
+        .from('audit_logs')
         .select('*')
         .order('created_at', { ascending: false })
         .limit(100);
@@ -59,7 +43,7 @@ const AuditLogViewer = () => {
       if (error) throw error;
       
       if (data) {
-        // Explicitly cast the data to AuditLog[]
+        // Cast the data to AuditLog[]
         const auditLogs = data as unknown as AuditLog[];
         setLogs(auditLogs);
         
@@ -77,7 +61,7 @@ const AuditLogViewer = () => {
   const fetchUserEmails = async (userIds: string[]) => {
     try {
       // Get user emails for each user ID
-      const { data, error } = await supabase
+      const { data, error } = await supabaseUntyped
         .from('profiles')
         .select('id, email')
         .in('id', userIds);

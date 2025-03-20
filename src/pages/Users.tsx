@@ -5,6 +5,7 @@ import AuthNav from "@/components/AuthNav";
 import Footer from "@/components/Footer";
 import { useAuth, UserRole } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { supabaseUntyped } from "@/lib/supabaseTypes";
 import { toast } from "sonner";
 import { 
   Table, 
@@ -35,11 +36,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { UserPlus, Users, Hospital, UserCog, Shield } from "lucide-react";
-
-// Create a direct query function to bypass type checking issues
-const directQuery = (table: string) => {
-  return supabase.from(table);
-};
 
 interface UserProfile {
   id: string;
@@ -90,18 +86,24 @@ const UsersPage = () => {
 
   const fetchHospitals = async () => {
     try {
-      const { data, error } = await directQuery('hospitals')
+      const { data, error } = await supabaseUntyped
+        .from('hospitals')
         .select('id, name')
         .order('name');
         
       if (error) throw error;
       
       if (data) {
-        setHospitals(data as HospitalOption[]);
+        const hospitalOptions = data.map((hospital: any) => ({
+          id: hospital.id,
+          name: hospital.name
+        })) as HospitalOption[];
+        
+        setHospitals(hospitalOptions);
         
         // If there's at least one hospital, set it as default for new users
         if (data.length > 0) {
-          setNewUser(prev => ({ ...prev, hospitalId: data[0].id }));
+          setNewUser(prev => ({ ...prev, hospitalId: hospitalOptions[0].id }));
         }
       }
     } catch (error) {

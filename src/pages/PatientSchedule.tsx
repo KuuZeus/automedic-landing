@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -5,6 +6,7 @@ import AuthNav from "@/components/AuthNav";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
+import { supabaseUntyped } from "@/lib/supabaseTypes";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import {
@@ -23,11 +25,6 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Calendar, Clock, Filter, Plus, User, Home, Calendar as CalendarIcon } from "lucide-react";
-
-// Create a direct query function to bypass type checking issues
-const directQuery = (table: string) => {
-  return supabase.from(table);
-};
 
 interface HospitalOption {
   id: string;
@@ -88,7 +85,8 @@ const PatientSchedule = () => {
 
   const fetchHospitals = async () => {
     try {
-      const { data, error } = await directQuery('hospitals')
+      const { data, error } = await supabaseUntyped
+        .from('hospitals')
         .select('id, name')
         .order('name');
 
@@ -100,11 +98,11 @@ const PatientSchedule = () => {
           name: hospital.name
         }));
         
-        setHospitals(hospitalOptions);
+        setHospitals(hospitalOptions as HospitalOption[]);
         
         // If user is not a super admin, and we have their hospital info, select it by default
         if (!isRoleAllowed(['super_admin']) && userHospital && !selectedHospital) {
-          const found = hospitalOptions.find(h => h.name === userHospital);
+          const found = hospitalOptions.find((h: any) => h.name === userHospital);
           if (found) {
             setSelectedHospital(found.id);
           }
@@ -199,14 +197,16 @@ const PatientSchedule = () => {
         .single();
         
       if (oldData && newData) {
-        await directQuery('audit_logs').insert({
-          user_id: user?.id,
-          action: 'update',
-          table_name: 'appointments',
-          record_id: appointmentId,
-          old_data: { status: oldData.status },
-          new_data: { status }
-        });
+        await supabaseUntyped
+          .from('audit_logs')
+          .insert({
+            user_id: user?.id,
+            action: 'update',
+            table_name: 'appointments',
+            record_id: appointmentId,
+            old_data: { status: oldData.status },
+            new_data: { status }
+          });
       }
 
       toast.success(`Appointment marked as ${status}`);
