@@ -44,7 +44,7 @@ export const useAppointmentStatus = (
       // Update the local state
       setAppointments(appointments.map(appointment => 
         appointment.id === selectedAppointmentId 
-          ? { ...appointment, status: "Attended", next_review_date: reviewDate }
+          ? { ...appointment, status: "attended", next_review_date: reviewDate }
           : appointment
       ));
       
@@ -93,11 +93,10 @@ export const useAppointmentStatus = (
 
       // Update local state immediately for better UX
       // Use consistent display status values
-      const displayStatus = status.charAt(0).toUpperCase() + status.slice(1);
       setAppointments((prevAppointments) =>
         prevAppointments.map((appointment) =>
           appointment.id === appointmentId
-            ? { ...appointment, status: displayStatus }
+            ? { ...appointment, status: status }
             : appointment
         )
       );
@@ -119,7 +118,7 @@ export const useAppointmentStatus = (
         );
       }
 
-      toast.success(`Appointment marked as ${displayStatus}`);
+      toast.success(`Appointment marked as ${status}`);
       
       // Refresh appointments data to ensure we have the latest
       fetchAppointments();

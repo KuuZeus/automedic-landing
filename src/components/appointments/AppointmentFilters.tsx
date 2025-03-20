@@ -43,10 +43,10 @@ const AppointmentFilters = ({
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Statuses</SelectItem>
-              <SelectItem value="scheduled">Scheduled</SelectItem>
-              <SelectItem value="completed">Completed</SelectItem>
+              <SelectItem value="scheduled">Pending</SelectItem>
+              <SelectItem value="completed">Attended</SelectItem>
               <SelectItem value="cancelled">Cancelled</SelectItem>
-              <SelectItem value="no-show">No Show</SelectItem>
+              <SelectItem value="no-show">Missed</SelectItem>
             </SelectContent>
           </Select>
         </div>
