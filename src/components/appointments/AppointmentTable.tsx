@@ -148,7 +148,7 @@ const AppointmentTable = ({
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="Attended">Attended</SelectItem>
-                          <SelectItem value="cancelled">Cancel</SelectItem>
+                          <SelectItem value="cancelled">Cancelled</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
