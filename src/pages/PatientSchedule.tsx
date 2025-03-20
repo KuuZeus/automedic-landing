@@ -24,7 +24,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Calendar, Clock, Filter, Plus, User, Home, Calendar as CalendarIcon } from "lucide-react";
+import { Calendar, Clock, Filter, Plus, User, Home, Calendar as CalendarIcon, Building } from "lucide-react";
 import ReviewDateModal from "@/components/ReviewDateModal";
 import { createAuditLog } from "@/lib/auditLogService";
 
@@ -45,6 +45,8 @@ const PatientSchedule = () => {
   const [userHospital, setUserHospital] = useState<string | null>(null);
   const [userClinic, setUserClinic] = useState<string | null>(null);
   const [userHospitalId, setUserHospitalId] = useState<string | null>(null);
+  const [userHospitalName, setUserHospitalName] = useState<string>("");
+  const [userClinicName, setUserClinicName] = useState<string>("");
 
   // Review Date Modal state
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
@@ -83,7 +85,23 @@ const PatientSchedule = () => {
       if (data) {
         setUserHospital(data.hospital);
         setUserClinic(data.clinic);
-        setUserHospitalId(null);
+        
+        // Find hospital ID based on hospital name
+        if (data.hospital) {
+          const { data: hospitalData, error: hospitalError } = await supabaseUntyped
+            .from('hospitals')
+            .select('id')
+            .eq('name', data.hospital)
+            .single();
+            
+          if (!hospitalError && hospitalData) {
+            setUserHospitalId(hospitalData.id);
+            setSelectedHospital(hospitalData.id);
+          }
+        }
+        
+        setUserHospitalName(data.hospital || "");
+        setUserClinicName(data.clinic || "");
       }
     } catch (error) {
       console.error('Error fetching user hospital info:', error);
@@ -111,6 +129,9 @@ const PatientSchedule = () => {
           const found = hospitalOptions.find((h: any) => h.name === userHospital);
           if (found) {
             setSelectedHospital(found.id);
+            
+            // Set user hospital name for display
+            setUserHospitalName(found.name);
           }
         }
       }
@@ -159,6 +180,7 @@ const PatientSchedule = () => {
       if (error) throw error;
 
       if (data) {
+        console.log("Fetched appointments:", data.length);
         setAppointments(data);
       }
     } catch (error) {
@@ -179,10 +201,12 @@ const PatientSchedule = () => {
     }
   };
 
-  const handleSaveReviewDate = async (reviewDate: string) => {
+  const handleSaveReviewDate = async (reviewDate: string | null) => {
     if (!selectedAppointmentId) return;
     
     try {
+      console.log("Saving review date:", reviewDate, "for appointment:", selectedAppointmentId);
+      
       // First mark the appointment as completed
       await markAppointmentStatus(selectedAppointmentId, "completed");
       
@@ -194,7 +218,7 @@ const PatientSchedule = () => {
         
       if (error) throw error;
       
-      toast.success("Appointment completed and next review scheduled");
+      toast.success("Appointment completed and next review " + (reviewDate ? "scheduled" : "not needed"));
       
       // Update the local state
       setAppointments(appointments.map(appointment => 
@@ -204,6 +228,7 @@ const PatientSchedule = () => {
       ));
       
     } catch (error: any) {
+      console.error("Error saving review date:", error);
       toast.error(error.message || "Failed to save review date");
     } finally {
       setIsReviewModalOpen(false);
@@ -310,7 +335,7 @@ const PatientSchedule = () => {
     <div className="min-h-screen flex flex-col">
       <AuthNav />
       <div className="flex-1 container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="flex justify-between items-center mb-8">
+        <div className="flex justify-between items-center mb-4">
           <h1 className="text-2xl font-bold">Patient Appointments</h1>
           {canManageAppointments && (
             <Button onClick={() => navigate("/new-appointment")}>
@@ -318,6 +343,24 @@ const PatientSchedule = () => {
             </Button>
           )}
         </div>
+        
+        {/* Hospital and Clinic Info */}
+        {(userHospitalName || userClinicName) && (
+          <div className="bg-blue-50 p-4 rounded-lg mb-6 flex items-center">
+            {userHospitalName && (
+              <div className="flex items-center mr-6">
+                <Building className="h-5 w-5 text-health-600 mr-2" />
+                <span className="font-medium">Hospital: {userHospitalName}</span>
+              </div>
+            )}
+            {userClinicName && (
+              <div className="flex items-center">
+                <Home className="h-5 w-5 text-health-600 mr-2" />
+                <span className="font-medium">Clinic: {userClinicName}</span>
+              </div>
+            )}
+          </div>
+        )}
 
         <div className="bg-white p-6 rounded-lg shadow mb-8">
           <div className="flex flex-col lg:flex-row lg:items-end gap-4 mb-6">
