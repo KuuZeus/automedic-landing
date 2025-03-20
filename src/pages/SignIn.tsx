@@ -26,14 +26,20 @@ const formSchema = z.object({
 
 const SignIn = () => {
   const navigate = useNavigate();
-  const { signIn, user, loading } = useAuth();
+  const { signIn, user, loading, userRole } = useAuth();
   
-  // Redirect if user is already logged in
+  // Redirect if user is already logged in based on role
   useEffect(() => {
     if (user && !loading) {
-      navigate("/patient-schedule");
+      if (userRole === 'analytics_viewer') {
+        navigate("/dashboard");
+      } else if (userRole === 'super_admin') {
+        navigate("/hospitals");
+      } else {
+        navigate("/patient-schedule");
+      }
     }
-  }, [user, loading, navigate]);
+  }, [user, loading, navigate, userRole]);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),

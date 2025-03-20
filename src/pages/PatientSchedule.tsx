@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import AuthNav from "@/components/AuthNav";
@@ -26,6 +27,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { logAppointmentUpdate } from "@/lib/auditLogService";
 
 interface DbAppointment {
   id: string;
@@ -49,24 +51,42 @@ interface DbAppointment {
   has_insurance?: boolean;
   insurance_number?: string;
   diagnosis?: string;
+  hospital_id?: string;
 }
 
 interface ProfileData {
   hospital: string | null;
   clinic: string | null;
+  hospital_id: string | null;
+}
+
+interface HospitalOption {
+  id: string;
+  name: string;
 }
 
 const PatientSchedule = () => {
-  const { user, loading } = useAuth();
+  const { user, loading, userRole, hospitalId, canManageAppointments } = useAuth();
   const navigate = useNavigate();
   const [selectedDate, setSelectedDate] = useState<Date>(startOfToday());
   const [appointments, setAppointments] = useState<PatientAppointment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [profile, setProfile] = useState<ProfileData>({ hospital: null, clinic: null });
+  const [profile, setProfile] = useState<ProfileData>({ hospital: null, clinic: null, hospital_id: null });
   const [purposeFilter, setPurposeFilter] = useState<string>("");
   const [uniquePurposes, setUniquePurposes] = useState<string[]>([]);
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
   const [currentAppointmentId, setCurrentAppointmentId] = useState<string>("");
+  const [hospitals, setHospitals] = useState<HospitalOption[]>([]);
+  const [selectedHospital, setSelectedHospital] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!loading && !user) {
+      navigate("/sign-in");
+    } else if (!loading && user && !canManageAppointments()) {
+      toast.error("You don't have permission to access this page");
+      navigate("/dashboard");
+    }
+  }, [user, loading, navigate, canManageAppointments]);
 
   useEffect(() => {
     const fetchUserProfile = async () => {
@@ -74,7 +94,7 @@ const PatientSchedule = () => {
       
       const { data, error } = await supabase
         .from('profiles')
-        .select('hospital, clinic')
+        .select('hospital, clinic, hospital_id')
         .eq('id', user.id)
         .single();
       
@@ -85,20 +105,43 @@ const PatientSchedule = () => {
       
       setProfile({
         hospital: data.hospital,
-        clinic: data.clinic
+        clinic: data.clinic,
+        hospital_id: data.hospital_id
       });
+      
+      // If super admin, fetch all hospitals
+      if (userRole === 'super_admin') {
+        fetchHospitals();
+      }
     };
     
     fetchUserProfile();
-  }, [user]);
+  }, [user, userRole]);
+
+  const fetchHospitals = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('hospitals')
+        .select('id, name')
+        .order('name');
+        
+      if (error) throw error;
+      
+      if (data) {
+        setHospitals(data);
+      }
+    } catch (error) {
+      console.error('Error fetching hospitals:', error);
+    }
+  };
 
   useEffect(() => {
-    if (selectedDate && profile.hospital && profile.clinic) {
+    if (selectedDate && (profile.hospital_id || (userRole === 'super_admin' && selectedHospital))) {
       fetchAppointments(selectedDate);
     } else if (selectedDate && user) {
       fetchAppointments(selectedDate);
     }
-  }, [selectedDate, profile, user]);
+  }, [selectedDate, profile, user, selectedHospital, userRole]);
 
   const fetchAppointments = async (date: Date) => {
     try {
@@ -110,7 +153,15 @@ const PatientSchedule = () => {
         .select('*')
         .eq('date', formattedDate);
       
-      if (profile.hospital) {
+      // Filter by hospital based on role
+      if (userRole === 'super_admin' && selectedHospital) {
+        // Super admin can view any hospital but respects the selected filter
+        query = query.eq('hospital_id', selectedHospital);
+      } else if (profile.hospital_id) {
+        // Hospital admin, appointment manager, and analytics viewer only see their hospital
+        query = query.eq('hospital_id', profile.hospital_id);
+      } else if (profile.hospital) {
+        // Fallback to hospital name if hospital_id not set
         query = query.eq('hospital', profile.hospital);
       }
       
@@ -199,6 +250,13 @@ const PatientSchedule = () => {
     nextReviewDate?: string
   ) => {
     try {
+      // Get the appointment before updating for audit log
+      const { data: currentAppointment } = await supabase
+        .from('appointments')
+        .select('*')
+        .eq('id', id)
+        .single();
+      
       const updateData: { status: string; next_review_date?: string } = { 
         status: newStatus
       };
@@ -215,6 +273,16 @@ const PatientSchedule = () => {
       if (error) {
         throw error;
       }
+      
+      // Create audit log
+      await logAppointmentUpdate(
+        id, 
+        { 
+          status: currentAppointment.status,
+          next_review_date: currentAppointment.next_review_date
+        }, 
+        updateData
+      );
       
       const updatedAppointments = appointments.map(appointment => 
         appointment.id === id ? { 
@@ -247,11 +315,9 @@ const PatientSchedule = () => {
     fetchAppointments(selectedDate);
   };
 
-  useEffect(() => {
-    if (!loading && !user) {
-      navigate("/sign-in");
-    }
-  }, [user, loading, navigate]);
+  const handleHospitalChange = (hospitalId: string) => {
+    setSelectedHospital(hospitalId);
+  };
 
   if (loading) {
     return (
@@ -308,6 +374,46 @@ const PatientSchedule = () => {
                 className="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-health-500"
               />
             </div>
+            
+            {/* Hospital selector for super admins */}
+            {userRole === 'super_admin' && hospitals.length > 0 && (
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className="gap-2">
+                    <Hospital className="h-4 w-4" />
+                    {selectedHospital 
+                      ? `Hospital: ${hospitals.find(h => h.id === selectedHospital)?.name}` 
+                      : "Select Hospital"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-56">
+                  <div className="space-y-2">
+                    <h3 className="font-medium">Filter by Hospital</h3>
+                    <div className="flex flex-col gap-1">
+                      {hospitals.map((hospital) => (
+                        <Button
+                          key={hospital.id}
+                          variant={selectedHospital === hospital.id ? "default" : "ghost"}
+                          className="justify-start"
+                          onClick={() => handleHospitalChange(hospital.id)}
+                        >
+                          {hospital.name}
+                        </Button>
+                      ))}
+                      {selectedHospital && (
+                        <Button
+                          variant="outline"
+                          className="mt-2"
+                          onClick={() => setSelectedHospital(null)}
+                        >
+                          Show All Hospitals
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                </PopoverContent>
+              </Popover>
+            )}
             
             <Popover>
               <PopoverTrigger asChild>
