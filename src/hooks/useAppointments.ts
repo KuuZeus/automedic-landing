@@ -205,12 +205,15 @@ export const useAppointments = (userRole: string | null, userHospital: string | 
     try {
       console.log("Marking appointment status in DB:", appointmentId, status);
       
-      // Get DB-compatible status
-      let dbStatus = status.toLowerCase();
+      // Get DB-compatible status based on the database constraints
+      // The database expects: 'scheduled', 'completed', 'cancelled', 'no-show'
+      let dbStatus = '';
       if (status === "Attended") dbStatus = "completed";
-      if (status === "Pending") dbStatus = "scheduled";
-      if (status === "Missed") dbStatus = "no-show";
-      if (status === "cancelled") dbStatus = "cancelled";
+      else if (status === "Pending") dbStatus = "scheduled";
+      else if (status === "Missed") dbStatus = "no-show";
+      else if (status === "cancelled" || status === "Cancel") dbStatus = "cancelled";
+      // Add fallback for unexpected values
+      else dbStatus = status.toLowerCase();
       
       console.log("DB status to use:", dbStatus);
       
@@ -233,10 +236,12 @@ export const useAppointments = (userRole: string | null, userHospital: string | 
       }
 
       // Update local state immediately for better UX
+      // Use the display status ("Cancel", "Attended", etc.)
+      const displayStatus = status === "cancelled" ? "Cancel" : status;
       setAppointments((prevAppointments) =>
         prevAppointments.map((appointment) =>
           appointment.id === appointmentId
-            ? { ...appointment, status }
+            ? { ...appointment, status: displayStatus }
             : appointment
         )
       );
@@ -258,7 +263,7 @@ export const useAppointments = (userRole: string | null, userHospital: string | 
         );
       }
 
-      toast.success(`Appointment marked as ${status}`);
+      toast.success(`Appointment marked as ${displayStatus}`);
       
       // Refresh appointments data to ensure we have the latest
       fetchAppointments();
